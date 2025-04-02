@@ -244,3 +244,7 @@ def update_cumulative_ledger_partyledger(instance, entry_date, journal_entry):
             CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, credit_amount=abs(value_changed), ledger=instance, entry_date=entry_date, journal = journal_entry)
         else:
             CumulativeLedger.objects.create(account_chart=instance.account_chart, ledger_name=instance.ledger_name, total_value=instance.total_value, value_changed=value_changed, debit_amount=abs(value_changed), ledger=instance, entry_date=entry_date, journal = journal_entry)
+
+
+
+# create_student_bills()

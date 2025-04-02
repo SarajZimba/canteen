@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'django.contrib.humanize',
 ]
-CUSTOM_APPS = ["bill", "organization", "user", "product", "api", "discount", "purchase", "accounting", "employee", "salary"]
+CUSTOM_APPS = ["bill", "organization", "user", "product", "api", "discount", "purchase", "accounting", "employee", "salary", "canteen"]
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
@@ -173,9 +173,9 @@ DATABASES = {
 }
 
 CRONJOBS = [
-    # ('* * * * *', 'organization.cron.end_day'),
-    ('* * * * *', 'organization.cron.fetch_details'),
-
+    ('18 18 1 * *', 'canteen.utils.create_student_bills'),  # Runs on the 1st day of each month at 12:02 AM
 ]
+
+# Put the time in utc cause the cpanel stores time in UTC
 
 # CRONTAB_COMMAND_PREFIX='aamonepal'

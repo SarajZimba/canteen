@@ -31,9 +31,18 @@
                Transaction Miti: <strong>  {{object.transaction_miti}} </strong>
             </div>
             <div class=" col text-end ">
-               Customer Name : <strong>  {{object.customer_name}} </strong><br>
+
+
+               {% if object.customer.student_class == '' %}
+               Customer Name : <strong>{{ object.customer.name }} </strong><br>
                Customer PAN : <strong>  {{object.customer_tax_number}} </strong><br>
                Cutomer Address: <strong>  {{object.customer_address}} </strong>
+               {% else %}
+               Student Name : <strong> {{ object.customer.name }}, {{ object.customer.student_class }}, {{ object.customer.section }} </strong><br>
+               Student Rollno : <strong>  {{object.customer.roll_no}} </strong><br>    
+               Student Address: <strong>  {{object.customer.address}} </strong>           
+               {% endif %}
+
             </div>
             <!--end::Logo-->
          </div>

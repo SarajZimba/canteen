@@ -22,7 +22,8 @@ from .salary_sheet import urlpatterns as salary_sheet_urlptterns
 from .deduction import urlpatterns as deduction_urlptterns
 from .commision import urlpatterns as commision_urlpatterns
 from .purchase import urlpatterns as purchase_urlpatterns
+from .canteen import urlpatterns as canteen_urlpatterns
 
 urlpatterns = (
-    [] + user_urlpatterns + product_urlpatterns + bill_urlpatterns + org_urlpatterns+discount_urlspatterns+purchaserequisition_urlpattern+accounting_urlpatterns+mobile_urlpatterns+enddayreport_urlpatterns+todayreport_urlpatterns+category_wise_sale_urlpatterns +report_urlpatterns+ master_urlpatterns+ bill_todayid_urlpatterns+ journal_entry_urls  + credit_journal_entry_urls + give_ledger_urls + vendor_urlpatterns + employee_urlpatterns + paid_leaves_urlpatterns + salary_sheet_urlptterns+ deduction_urlptterns+ commision_urlpatterns+ purchase_urlpatterns
+    [] + user_urlpatterns + product_urlpatterns + bill_urlpatterns + org_urlpatterns+discount_urlspatterns+purchaserequisition_urlpattern+accounting_urlpatterns+mobile_urlpatterns+enddayreport_urlpatterns+todayreport_urlpatterns+category_wise_sale_urlpatterns +report_urlpatterns+ master_urlpatterns+ bill_todayid_urlpatterns+ journal_entry_urls  + credit_journal_entry_urls + give_ledger_urls + vendor_urlpatterns + employee_urlpatterns + paid_leaves_urlpatterns + salary_sheet_urlptterns+ deduction_urlptterns+ commision_urlpatterns+ purchase_urlpatterns + canteen_urlpatterns
 )
