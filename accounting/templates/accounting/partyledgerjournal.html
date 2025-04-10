@@ -1,59 +1,99 @@
-{%extends 'base.html'%} {%load static%} {%block title%} Create {%endblock%}
-{%block content %}
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %} Create {% endblock %}
+
+{% block content %}
 <div class="card p-2">
-  <a href="#" onclick="goBack()"> Return Back</a>
+  <a href="#" onclick="goBack()">Return Back</a>
   <div class="card-body p-4 m-4">
       <h1>Ledger - {{ ledger.ledger_name }}</h1>
       <p>Account Chart: {{ ledger.account_chart }}</p>
       <p>Total Value: {{ ledger.total_value }}</p>
-      <!-- <p>Total Value: {{ ledger.id }}</p> -->
-      
   </div>
 </div>
-
 
 <div class="card p-2">
-
-<div class="card-body p-4 m-4">
-
-  <h1>{% if title %} {{title}} {% else %} Payment {% endif %}</h1>
+  <div class="card-body p-4 m-4">
+    <h1>{% if title %}{{ title }}{% else %}Payment{% endif %}</h1>
+    
     <form method="POST">
-      <div class="row">
-        
-          <select class="ledger-select form-control" id="1_ledger_select" name="debit_ledger"
-              required onchange="ledgerChange(this)">
-              <option value="------" selected>-----</option>
-              {% for ledger in paid_from%}
-              <option value={{ledger.id}}>{{ledger.ledger_name}}</option>
-              {% endfor %}
-          </select>
+      {% csrf_token %}
 
-          <label class="form-check form-switch form-check-custom form-check-solid">
-            Amount
-          <!-- <span class="form-check-label fw-bold text-muted" for="kt_modal_add_customer_billing">
-            Pay amount
-          </span> -->
-        </label>
+      <div class="row mb-3">
+        <label for="ledger-select">Select Ledger</label>
+        <select class="ledger-select form-control" id="ledger-select" name="debit_ledger" required onchange="ledgerChange(this)">
+          <option value="">-----</option>
+          {% for ledger in paid_from %}
+            <option value="{{ ledger.id }}">{{ ledger.ledger_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Subledger Dropdown (Hidden Initially) -->
+      <div id="subledger-container" style="display: none;" class="row mb-3">
+        <label for="subledger-select">Select Subledger</label>
+        <select class="form-control" id="subledger-select" name="subledger">
+          <!-- Options will be loaded via AJAX -->
+        </select>
+      </div>
+
+      <div class="row mb-3">
+        <label>Amount</label>
         <input type="number" step="0.01" class="amount fw-bolder form-control" min="0" name="amount" required placeholder="Enter amount">
-        <label class="form-check form-switch form-check-custom form-check-solid">
-          Particular
-        <!-- <span class="form-check-label fw-bold text-muted" for="kt_modal_add_customer_billing">
-          Pay amount
-        </span> -->
-      </label>
-        <input class="particular fw-bolder form-control" type="text" id="particular"
-          name="particular" required placeholder="Enter particulars">
-      
-          </div>
+      </div>
 
+      <div class="row mb-3">
+        <label>Particular</label>
+        <input class="particular fw-bolder form-control" type="text" id="particular" name="particular" required placeholder="Enter particulars">
+      </div>
 
-    {% csrf_token %}
-
-    <button type="submit" class="btn btn-primary">Submit</button>
-  </form>
-
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
   </div>
 </div>
+
+<!-- jQuery (if not already included in your base.html) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+  function ledgerChange(selectElement) {
+    const ledgerId = selectElement.value;
+
+    if (!ledgerId) {
+      $('#subledger-container').hide();
+      $('#subledger-select').empty();
+      return;
+    }
+
+    $.ajax({
+      url: "{% url 'expense-subledgers-list' %}",  // Your corrected URL name
+      method: "POST",
+      contentType: "application/json",
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      data: JSON.stringify({ ledger: ledgerId }),
+      success: function (data) {
+        const subledgerSelect = $('#subledger-select');
+        subledgerSelect.empty();
+
+        if (data.length > 0) {
+          $('#subledger-container').show();
+          subledgerSelect.append('<option value="">Select Subledger</option>');
+          data.forEach(item => {
+            subledgerSelect.append(`<option value="${item.id}">${item.sub_ledger_name}</option>`);
+          });
+        } else {
+          $('#subledger-container').hide();
+        }
+      },
+      error: function (err) {
+        console.error("Failed to load subledgers:", err);
+        $('#subledger-container').hide();
+      }
+    });
+  }
+</script>
 
 {% endblock %}

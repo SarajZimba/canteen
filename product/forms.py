@@ -40,12 +40,25 @@ class ProductForm(BaseForm, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["price"].label = "Selling Price"
-        self.fields['ledger'] = forms.ModelChoiceField(queryset=AccountLedger.objects.all().order_by('ledger_name'))
+        self.fields['ledger'] = forms.ModelChoiceField(queryset=AccountLedger.objects.all().order_by('ledger_name'),required=False )
         self.fields["ledger"].widget.attrs = {
             "class":"form-select",
             "data-control": "select2",
             "data-placeholder": "Select Item",
         }
+    def clean(self):
+        cleaned_data = super().clean()
+        is_canteen_item = cleaned_data.get("is_canteen_item")
+        lunch_type = cleaned_data.get("lunch_type")
+
+        if is_canteen_item and not lunch_type:
+            self.add_error("lunch_type", "Lunch type is required for canteen items.")
+
+        # Optional: clear lunch_type if not a canteen item
+        if not is_canteen_item:
+            cleaned_data["lunch_type"] = None
+
+        return cleaned_data
 
 from .models import CustomerProduct
 

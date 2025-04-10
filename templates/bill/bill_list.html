@@ -9,7 +9,7 @@
 
                 {% include 'components/search_filter.html' with show_terminal="yes"  search_title="Search Bill" create_button="New Bill" create_url="bill_create" %} 
 
-
+    <div class="justify-content-end m-auto"><a href="{%url 'studentcanteenattendance_list'%}">See Student Attendance list</a></div>
     <div class="card-body pt-0">
     <!--begin::Table-->
     <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">

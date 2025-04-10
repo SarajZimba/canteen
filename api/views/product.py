@@ -481,3 +481,19 @@ class BranchWiseProduct(viewsets.ViewSet):
         all_products_serializer = ProductSerializerList(all_products, many=True, context={"branch": branch_id})
 
         return Response(all_products_serializer.data)
+    
+class GetCanteenProductRate(APIView):
+    def get(self, request):
+
+        try:
+            product = Product.objects.filter(is_canteen_item=True).first()
+
+            if product:
+                rate = product.price
+
+                return Response({"rate": rate}, 200)
+            else:
+                return Response({"error": "No product found"}, 400)
+            
+        except Exception as e:
+            return Response({"error": f"Error in getting canteen item + {str(e)}"} , 400)

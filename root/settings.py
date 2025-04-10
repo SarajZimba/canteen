@@ -137,6 +137,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework.authentication.SessionAuthentication",
+
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 12,
@@ -173,7 +174,7 @@ DATABASES = {
 }
 
 CRONJOBS = [
-    ('18 18 1 * *', 'canteen.utils.create_student_bills'),  # Runs on the 1st day of each month at 12:02 AM
+    ('2 0 1 * *', 'canteen.utils.create_student_bills'),  # Runs on the 1st day of each month at 5:47 AM
 ]
 
 # Put the time in utc cause the cpanel stores time in UTC

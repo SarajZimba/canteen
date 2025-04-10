@@ -689,9 +689,30 @@ class VendorCreate(VendorMixin, CreateView):
 class VendorUpdate(VendorMixin, UpdateView):
     template_name = "update.html"
 
+from purchase.models import Purchase
+from django.http import JsonResponse
+class VendorDelete(VendorMixin, View):
+    def remove_from_DB(self, request):
+        try:
 
-class VendorDelete(VendorMixin, DeleteMixin, View):
-    pass
+            object_id = request.GET.get("pk", None)
+            object = self.model.objects.get(id=object_id)
+
+            if Purchase.objects.filter(vendor=object).exists():
+                return
+            else:
+                object.is_deleted = True
+                object.status = False
+                object.save()
+
+                return True
+        except Exception as e:
+            print(e)
+            return str(e)
+
+    def get(self, request):
+        status = self.remove_from_DB(request)
+        return JsonResponse({"deleted": status})   
 
 '''  -------------------------------------    '''
 
@@ -768,6 +789,7 @@ class ProductPurchaseCreateView(IsAdminMixin, CreateView):
     
     def form_valid(self, form):
         form_data = form.data 
+        print(f"form_data, {form_data}")
         bill_no = form_data.get('bill_no', None)
         bill_date = form_data.get('bill_date', None)
         pp_no = form_data.get('pp_no',None)

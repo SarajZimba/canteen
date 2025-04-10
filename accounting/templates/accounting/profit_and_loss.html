@@ -53,6 +53,29 @@
                     </tbody>
                 </table>
 
+                    <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer" id="kt_customers_table">
+                        <thead class="bg-secondary">
+                            <th class="col-7">Assets</th>
+                            <th>Amount</th>
+                            <th>Amount</th>
+                        </thead>
+                        <tbody class="fw-bolder text-gray-600">
+                            {% for asset in assets %}
+                            <tr>
+                                <td><a href="{% url 'ledger_detail' asset.ledger_id %}">{{asset.title}}</a></td>
+                
+                                <!--<td>{{asset.title}}</td>-->
+                                <td>{{asset.amount|intcomma}}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr>
+                                <td></td>
+                                <td>{{asset_total|intcomma}}</td>
+                                <td>{{asset_total|intcomma}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
                 <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer"
                     id="kt_customers_table">
                     <thead class="bg-secondary">
@@ -75,7 +98,30 @@
                             <td>{{expense_total|intcomma}}</td>
                         </tr>
                     </tbody>
-                </table
+                </table>
+
+                <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable no-footer" id="kt_customers_table">
+                    <thead class="bg-secondary">
+                        <th class="col-7">Liabilities</th>
+                        <th>Amount</th>
+                        <th>Amount</th>
+                    </thead>
+                    <tbody class="fw-bolder text-gray-600">
+                        {% for liability in liabilities %}
+                        <tr>
+                            <td><a href="{% url 'ledger_detail' liability.ledger_id %}">{{liability.title}}</a></td>
+            
+                            <!--<td>{{liability.title}}</td>-->
+                            <td>{{liability.amount|intcomma}}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <td></td>
+                            <td>{{liability_total|intcomma}}</td>
+                            <td>{{liability_total|intcomma}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             {%if object_list%}
             {% include 'pagination.html' %}

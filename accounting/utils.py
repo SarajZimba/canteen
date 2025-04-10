@@ -509,23 +509,32 @@ class BalanceSheetData():
 class ProfitAndLossData():
 
     @staticmethod
-    def get_data(revenues, expenses):
+    def get_data(revenues, expenses, liabilities, assets):
         revenue_list= []
         revenue_total = 0
         expense_list= []
         expense_total = 0
+        liability_list= []
+        liability_total = 0
+        asset_list= []
+        asset_total = 0
 
         for revenue in revenues:
             revenue_list.append({'ledger_id':revenue['ledger_id'], 'title':revenue['ledger_name'], 'amount': revenue['total_value']})
             revenue_total += revenue['total_value']
 
         for expense in expenses:
-            # expense_list.append({'title':expense.ledger_name, 'amount': expense.total_value})
             expense_list.append({'ledger_id':expense['ledger_id'], 'title':expense['ledger_name'], 'amount': expense['total_value']})
-            # expense_total += expense.total_value
             expense_total += expense['total_value']
 
-        return expense_list, expense_total, revenue_list, revenue_total
+        for liability in liabilities:
+            liability_list.append({'ledger_id':liability['ledger_id'], 'title':liability['ledger_name'], 'amount': liability['total_value']})
+            liability_total += liability['total_value']
+        for asset in assets:
+            asset_list.append({'ledger_id':asset['ledger_id'], 'title':asset['ledger_name'], 'amount': asset['total_value']})
+            asset_total += asset['total_value']
+
+        return expense_list, expense_total, revenue_list, revenue_total, liability_list, liability_total, asset_list, asset_total
     
 """
 Signal to update Cumulative Ledger

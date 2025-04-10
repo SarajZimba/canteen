@@ -9,7 +9,17 @@
 
                 {% include 'components/search_filter.html' with  search_title="Search Customer" create_url="user:customer_create" create_button="Add Customer" %} 
 
-
+                <div class="card mt-5 p-5">
+                  <h4 class="mb-4">Upload Students (Excel)</h4>
+                  <form action="{% url 'user:upload_customers' %}" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                      <input type="file" name="file" class="form-control mb-3" required accept=".xlsx,.xls">
+                      <input type="submit" class="btn btn-primary" value="Upload">
+                    </div>
+                  </form>
+                </div>
+              
     <div class="card-body pt-0">
     <!--begin::Table-->
     <div id="kt_customers_table_wrapper" class="dataTables_wrapper dt-bootstrap4 no-footer">

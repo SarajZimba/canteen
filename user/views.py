@@ -190,3 +190,114 @@ class AgentUpdate(AgentMixin, UpdateView):
 
 class AgentDelete(AgentMixin, DeleteMixin, View):
     pass
+
+
+# from django.shortcuts import render, redirect
+# from django.contrib import messages
+# import pandas as pd
+# from .models import Customer
+
+# def upload_customer_excel(request):
+#     if request.method == 'POST' and request.FILES.get('file'):
+#         excel_file = request.FILES['file']
+        
+#         print(excel_file)
+#         try:
+#             df = pd.read_excel(excel_file)
+#             df.columns = ['fname', 'mname', 'lname', 'roll_num', 'student_class', 'section', 'lunch_type']
+            
+#             customers_created = 0
+#             for index, row in df.iterrows():
+#                 mid_name = str(row['mname']).strip() if pd.notna(row['mname']) else ""
+            
+#                 full_name = f"{str(row['fname']).strip()} {mid_name} {str(row['lname']).strip()}"
+#                 try:
+#                     if str(row['lunch_type']).strip() == "Non Veg":
+
+#                         meal_preference = "nonveg"
+#                     elif str(row['lunch_type']).strip() == "veg":
+
+#                         meal_preference = "veg"
+#                     elif str(row['lunch_type']).strip() == "egg":
+
+#                         meal_preference = "egg"
+                    
+#                     Customer.objects.create(
+#                         name=full_name,
+#                         section=str(row['section']).strip(),
+#                         roll_no=str(row['roll_num']).strip(),
+#                         student_class=str(row['student_class']).strip() if pd.notna(row['student_class']) else None,
+#                         meal_preference = str(meal_preference)
+#                     )
+#                     customers_created += 1
+#                 except Exception as e:
+#                     print(e)
+
+#             messages.success(request, f"{customers_created} students imported successfully.")
+#         except Exception as e:
+#             messages.error(request, f"Error: {e}")
+#         return redirect('user:upload_customers')
+
+#     return redirect('user:customer_list') # Or any template you'd like
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from openpyxl import load_workbook
+from .models import Customer
+
+def upload_customer_excel(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        excel_file = request.FILES['file']
+        try:
+            wb = load_workbook(excel_file)
+            sheet = wb.active  # You can also use wb.worksheets[0] if needed
+
+            customers_created = 0
+            customer_create_errors = []
+
+            for index, row in enumerate(sheet.iter_rows(min_row=2), start=2):  # Skip header row
+                try:
+                    fname = str(row[0].value).strip() if row[0].value else ""
+                    mname = str(row[1].value).strip() if row[1].value else ""
+                    lname = str(row[2].value).strip() if row[2].value else ""
+                    roll_no = str(row[3].value).strip() if row[3].value else None
+                    student_class = str(row[4].value).strip() if row[4].value else None
+                    section = str(row[5].value).strip() if row[5].value else ""
+                    lunch_type = str(row[6].value).strip().lower() if row[6].value else ""
+
+                    full_name = f"{fname} {mname} {lname}".strip()
+
+                    if lunch_type in ['non veg', 'nonveg']:
+                        meal_preference = 'nonveg'
+                    elif lunch_type == 'veg':
+                        meal_preference = 'veg'
+                    elif lunch_type == 'egg':
+                        meal_preference = 'egg'
+                    else:
+                        meal_preference = 'unknown'
+
+                    Customer.objects.create(
+                        name=full_name,
+                        section=section,
+                        roll_no=roll_no,
+                        student_class=student_class,
+                        meal_preference=meal_preference
+                    )
+                    customers_created += 1
+
+                except Exception as e:
+                    customer_create_errors.append(f"Row {index}: {str(e)}")
+
+            # Show messages
+            if customer_create_errors:
+                messages.error(request, "Some entries could not be imported:\n" + "\n".join(customer_create_errors), extra_tags='danger')
+
+            if customers_created:
+                messages.success(request, f"{customers_created} students imported successfully.", extra_tags='success')
+
+        except Exception as e:
+            messages.error(request, f"Error reading file: {e}", extra_tags='danger')
+
+        return redirect('user:customer_list')
+
+    return redirect('user:customer_list')

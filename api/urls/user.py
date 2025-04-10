@@ -19,3 +19,21 @@ urlpatterns = [
     path("login/", CustomTokenObtainPairView.as_view(), name="login"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ] + router.urls
+
+from api.views.user import PostCustomerListAPI
+urlpatterns += [
+    path("customerlist-create/", PostCustomerListAPI.as_view(), name="customerlist-create")
+]
+from api.views.user import DeleteCustomerAPI
+urlpatterns += [
+    path("delete-customer/", DeleteCustomerAPI.as_view(), name="delete-customer")
+]
+
+from api.views.user import UpdateCustomerStudentClass
+urlpatterns += [
+    path("update-class/", UpdateCustomerStudentClass.as_view(), name="update-class")
+]
+from api.views.user import StatusToggleStudent
+urlpatterns += [
+    path("status-toggle-customer/", StatusToggleStudent.as_view(), name="status-toggle-customer/")
+]

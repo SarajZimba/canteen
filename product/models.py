@@ -41,9 +41,28 @@ class Product(BaseModel):
     ledger = models.ForeignKey('accounting.AccountLedger', null=True, blank=True, on_delete=models.SET_NULL)
     minimum_stock = models.PositiveIntegerField(default=0)
 
+    LUNCH_TYPE_CHOICES = [
+        ("veg", "Vegetarian"),
+        ("nonveg", "Non-Vegetarian"),
+        ("egg", "Egg"),
+    ]
+    lunch_type = models.CharField(
+        max_length=10,
+        choices=LUNCH_TYPE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Lunch Type",
+        help_text="Applicable only for canteen items",
+    )
+
 
     def __str__(self):
         return f"{self.title} - {self.category.title}"
+
+    def save(self, *args, **kwargs):
+        if not self.is_canteen_item:
+            self.lunch_type = None  # Clear lunch_type for non-canteen items
+        super().save(*args, **kwargs)
 
 
 class ProductStock(BaseModel):

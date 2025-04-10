@@ -62,6 +62,13 @@ class ProductPurchaseForm(BaseForm, forms.ModelForm):
     field_order = [ 'bill_no', 'bill_date', 'pp_no', 'vendor', 'product', 'sub_total', 'discount_percentage', 'discount_amount', 'taxable_amount',
                 'non_taxable_amount', 'tax_amount', 'grand_total', 'amount_in_words', 'payment_mode', 'debit_account']
 
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.filter(is_deleted=False, status=True, category__isnull=False),
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "data-control": "select2",
+        })
+    )
 
 
     def __init__(self, *args, **kwargs):

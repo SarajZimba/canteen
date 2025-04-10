@@ -57,3 +57,11 @@ urlpatterns += [
     path("agent/<int:pk>/update/", AgentUpdate.as_view(), name="agent_update"),
     path("agent/delete", AgentDelete.as_view(), name="agent_delete"),
 ]
+
+from django.urls import path
+from .views import upload_customer_excel
+
+urlpatterns += [
+    path('upload-students/', upload_customer_excel, name='upload_customers'),
+
+]

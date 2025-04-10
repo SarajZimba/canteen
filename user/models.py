@@ -43,9 +43,22 @@ class Customer(BaseModel):
     email = models.EmailField(null=True, blank=True)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, null=True, blank=True)
     loyalty_points =models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    roll_no = models.PositiveIntegerField(null=True, blank=True)
+    roll_no = models.CharField(max_length=100, null=True, blank=True)
     student_class = models.CharField(max_length=100, null=True, blank=True)
     section = models.CharField(max_length=100, null=True, blank=True)
+    # meal_preference = models.CharField(max_length=100, null=True, blank=True)
+    MEAL_TYPE_CHOICES = [
+        ("veg", "Vegetarian"),
+        ("nonveg", "Non-Vegetarian"),
+        ("egg", "Egg"),
+    ]
+    meal_preference = models.CharField(
+        max_length=10,
+        choices=MEAL_TYPE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Custtomer Meal Type",
+    )
     def __str__(self):
         return f"{self.name} ({self.contact_number})"
 

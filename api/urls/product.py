@@ -27,4 +27,9 @@ urlpatterns = [
 
 
 ] + router.urls
+
+from api.views.product import GetCanteenProductRate
+urlpatterns += [
+    path("getcanteen-product", GetCanteenProductRate.as_view(), name= "getcanteen-product")
+]
  

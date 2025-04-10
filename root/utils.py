@@ -98,13 +98,13 @@ class UserMixin(BaseModel):
     def __str__(self):
         return f"{self.user.full_name} - {self.phone_number}"
 
-
 class DeleteMixin:
     def remove_from_DB(self, request):
         try:
             object_id = request.GET.get("pk", None)
             object = self.model.objects.get(id=object_id)
             object.is_deleted = True
+            object.status = False
             object.save()
 
             return True
@@ -129,11 +129,36 @@ class SingletonModel:
         except cls.DoesNotExist:
             return cls()
 
+# from bill.models import Bill
+# def remove_from_DB(self, request):
+#     try:
+#         object_id = request.GET.get("pk", None)
+#         if Bill.objects.filter(customer__id = object_id).exists():
+#             self.model.objects.get(id=object_id).update(status=False)
+#         self.model.objects.get(id=object_id).delete()
+#         return True
+#     except:
+#         return False
+
+
 
 def remove_from_DB(self, request):
     try:
         object_id = request.GET.get("pk", None)
-        self.model.objects.get(id=object_id).delete()
-        return True
-    except:
-        return False
+        if object_id:
+            # Fetch the object once and store it in a variable
+            obj = self.model.objects.get(id=object_id)
+            from bill.models import Bill
+            # Update the status before deleting (if needed)
+            if Bill.objects.filter(customer__id=object_id).exists():
+                obj.status = False
+                obj.save()
+                return True
+            # Delete the object
+            obj.delete()
+            
+            return True
+        else:
+            return False  # Handle missing 'pk' in the request
+    except self.model.DoesNotExist:
+        return False  # Handle case where object with the given ID doesn't exist
