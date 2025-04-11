@@ -16,3 +16,7 @@ class StudentAttendance(BaseModel):
     product = models.ForeignKey(Product, models.CASCADE, null=True, blank=True)
     def __str__(self):
         return f"{self.student.name} ({self.eaten_date})"
+    
+class WorkingDays(BaseModel):
+    working_date = models.DateField(null=True, blank=True)
+    
