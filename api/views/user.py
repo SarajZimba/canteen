@@ -130,3 +130,15 @@ class StatusToggleStudent(APIView):
             return Response({"error" : "Student not found"}, 400)
 
 
+class StudentsAPI(APIView):
+
+    def get(self, request, *args, **kwargs):
+        customers = Customer.objects.filter(student_class__isnull=False, roll_no__isnull=False, section__isnull=False)
+
+        serializer = CustomerSerializer(customers, many=True)
+
+        return Response(serializer.data, 200)
+    # serializer_class = CustomerSerializer
+    # model = Customer
+    # queryset = Customer.objects.active()
+    # pagination_class = None

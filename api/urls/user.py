@@ -33,7 +33,8 @@ from api.views.user import UpdateCustomerStudentClass
 urlpatterns += [
     path("update-class/", UpdateCustomerStudentClass.as_view(), name="update-class")
 ]
-from api.views.user import StatusToggleStudent
+from api.views.user import StatusToggleStudent, StudentsAPI
 urlpatterns += [
-    path("status-toggle-customer/", StatusToggleStudent.as_view(), name="status-toggle-customer/")
+    path("status-toggle-customer/", StatusToggleStudent.as_view(), name="status-toggle-customer/"),
+    path("student-lists/", StudentsAPI.as_view(), name="student-lists/"),
 ]
