@@ -29,7 +29,7 @@ class User(AbstractUser, BaseModel):
 
         super().save(*args, **kwargs)
 
-
+from discount.models import DiscountTable
 class Customer(BaseModel):
     name = models.CharField(max_length=255, verbose_name="Customer Name")
     tax_number = models.CharField(
@@ -46,7 +46,6 @@ class Customer(BaseModel):
     roll_no = models.CharField(max_length=100, null=True, blank=True)
     student_class = models.CharField(max_length=100, null=True, blank=True)
     section = models.CharField(max_length=100, null=True, blank=True)
-    # meal_preference = models.CharField(max_length=100, null=True, blank=True)
     MEAL_TYPE_CHOICES = [
         ("veg", "Vegetarian"),
         ("nonveg", "Non-Vegetarian"),
@@ -59,6 +58,7 @@ class Customer(BaseModel):
         blank=True,
         verbose_name="Custtomer Meal Type",
     )
+    discount_applicable = models.ForeignKey(DiscountTable, models.CASCADE, null=True, blank=True)
     def __str__(self):
         return f"{self.name} ({self.contact_number})"
 

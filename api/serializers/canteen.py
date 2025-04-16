@@ -11,7 +11,6 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
     # product_rate = serializers.SerializerMethodField()
     meal_preference = serializers.SerializerMethodField()
     product_name = serializers.SerializerMethodField()
-    
 
 
     class Meta:
@@ -37,22 +36,7 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
         return obj.student.meal_preference if obj.student.meal_preference else None
     def get_product_name(self, obj):
         return obj.product.title if obj.product.title else None
+
     # def get_product_rate(self, obj):
     #     item = Product.objects.filter(is_canteen_item=True).first()
     #     return item.price if item else 0.0 
-
-# serializers.py
-from rest_framework import serializers
-from canteen.models import PreInformedLeave
-
-class PreInformedLeaveSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PreInformedLeave
-        exclude = [
-            "created_at",
-            "updated_at",
-            "status",
-            "is_deleted",
-            "sorting_order",
-            "is_featured"
-        ]

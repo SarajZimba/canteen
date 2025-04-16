@@ -153,3 +153,28 @@ class AgentSerializer(serializers.ModelSerializer):
     class Meta:
         model=User
         fields = ['full_name', 'username']
+
+from canteen.models import PreInformedLeave
+class StudentSerializer(ModelSerializer):
+    loyalty_points = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=False, required=False)
+    on_leave = serializers.SerializerMethodField()
+    class Meta:
+        model = Customer
+        exclude = [
+            "created_at",
+            "updated_at",
+            "status",
+            "is_deleted",
+            "sorting_order",
+            "is_featured",
+            "created_by",
+        ]
+
+    def get_on_leave(self, obj):
+        from datetime import date
+        today = date.today()
+        return PreInformedLeave.objects.filter(
+            student=obj,
+            start_date__lte=today,
+            end_date__gte=today
+        ).exists()

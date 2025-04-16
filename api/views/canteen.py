@@ -37,15 +37,27 @@ class StudentAttendanceViewSet(ModelViewSet):
 from rest_framework.response import Response
 from django.db import transaction
 from datetime import datetime
+from canteen.utils import check_studentattendance_forleave
+from canteen.models import tblmissedattendance
+
 class StudentAttendanceListCreate(APIView):
     permission_classes = [IsAuthenticated]
     @transaction.atomic()
     def post(self, request, *args, **kwargs):
+        json_data = request.data
+        # data = request.data
 
-        data = request.data
+        data = json_data.get('present', None)
+
+        absent_data = json_data.get('absent', None)
+
+
         # Ensure the data is always a list
         if isinstance(data, dict):  
             data = [data]
+        if data != []:
+            student_class = data[0]["class"]   
+        
         for entry in data:
             # Check if the attendance entry for the student already exists for the given date
             student_id = entry.get("student")
@@ -59,6 +71,12 @@ class StudentAttendanceListCreate(APIView):
                         {"error": f"Attendance for student {existing_entry.student.name} on {eaten_date} already exists."},
                         status=400
                 )
+            
+            else:
+                tblmissedattendance_obj = tblmissedattendance.objects.filter(student__id = student_id, missed_date=eaten_date).first()
+                if tblmissedattendance_obj:
+                    tblmissedattendance_obj.delete()
+
         # today_day = datetime.today().strftime("%A")  # e.g., "Monday"  
         # today_day = "Wednesday"  # e.g., "Monday"  
 
@@ -114,6 +132,8 @@ class StudentAttendanceListCreate(APIView):
         # Serialize and save the attendance records if no existing entries found
         serializer = StudentAttendanceSerializer(data=data, many=True)
         print(data)
+
+        check_studentattendance_forleave(absent_data)
         try:
             if serializer.is_valid():
                 serializer.save()
@@ -343,7 +363,7 @@ class CheckoutCanteenBill(APIView):
             "message": f"Bill created successfully for {student.name}"
         }, status=status.HTTP_200_OK)
         
-from canteen.utils import create_student_bills_for_class
+from canteen.utils import create_student_bills_for_class, create_advance_bills_for_class
 class CheckoutClassBills(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -355,7 +375,8 @@ class CheckoutClassBills(APIView):
 
         if student_class:
             try:
-                create_student_bills_for_class(student_class)
+                # create_student_bills_for_class(student_class)
+                create_advance_bills_for_class(student_class)
                 return Response({"data": f"Bills created for class {student_class}"}, 200)
             except Exception as e:
                 print(f"Error in creating bill for class {student_class} with {e}")
@@ -363,78 +384,6 @@ class CheckoutClassBills(APIView):
         else:
             print("Student class cannot be none")
             return Response({"error": "No class provided"}, 400)
-        
-# from rest_framework.response import Response
-# from rest_framework import status
-# import jwt
-# from user.models import User
-# from django.conf import settings
-# from rest_framework.views import APIView
-
-# class VerifyToken(APIView):
-
-#     def get(self, request):
-#         # Get token from query parameter instead of body
-#         token = request.GET.get('token')
-
-#         if not token:
-#             return Response({'error': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             # Decode the token
-#             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-#             print(payload)
-#             user = User.objects.get(id=int(payload['user_id']))
-#             print(user)
-#             # Return user details
-#             return Response({
-#                 'username': user.username,
-#                 'email': user.email,
-#                 # Optionally issue a new token/session here
-#             })
-#         except jwt.ExpiredSignatureError:
-#             return Response({'error': 'Token expired'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except jwt.InvalidTokenError:
-#             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except User.DoesNotExist:
-#             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-# from rest_framework.response import Response
-# from rest_framework import status
-# import jwt
-# from user.models import User
-# from django.conf import settings
-# from rest_framework.views import APIView
-
-# class VerifyToken(APIView):
-#     permission_classes = [AllowAny]
-#     def get(self, request):
-#         print('In here')
-#         # Get token from Authorization header
-#         auth_header = request.headers.get('Authorization')
-
-#         print(auth_header)
-#         if not auth_header or not auth_header.startswith('Bearer '):
-#             return Response({'error': 'Token is required or improperly formatted'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Extract the token (remove "Bearer " prefix)
-#         token = auth_header.split(' ')[1]
-
-#         try:
-#             # Decode the token
-#             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-#             user = User.objects.get(id=int(payload['user_id']))
-
-#             # Return user details
-#             return Response({
-#                 'valid':True
-#             })
-#         except jwt.ExpiredSignatureError:
-#             return Response({'error': 'Token expired'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except jwt.InvalidTokenError:
-#             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except User.DoesNotExist:
-#             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -471,63 +420,9 @@ class VerifyToken(APIView):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-# from user.models import Customer
-# class StudentsServedData(APIView):
-#     permission_classes = [IsAuthenticated]
-
-
-#     def get(self, request):
-#         from datetime import datetime
-#         from django.utils import timezone
-
-#         now = timezone.now()  # safer for timezone-aware datetimes
-
-
-#         # Get token from query parameter instead of headers
-#         data_type = request.GET.get('data_type')
-#         print(data_type)
-#         if not data_type:
-#             return Response({'error': 'Data type is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             total_no_students = Customer.objects.filter(student_class__isnull=False, status=True, is_deleted=False).count()
-#             if data_type == "today":
-#                 # Decode the token
-
-#                 total_students_served = StudentAttendance.objects.filter(eaten_date=now.date(),status=True,
-#                     is_deleted=False).count()
-                
-#                 data = {
-#                     "total_no_students": total_no_students,
-#                     "total_students_served": total_students_served
-#                 }
-
-#                 return Response(data, 200)
-
-#             elif data_type == "monthly":
-#                 total_students_served = StudentAttendance.objects.filter(
-#                     eaten_date__year=now.year,
-#                     eaten_date__month=now.month,
-#                     status=True,
-#                     is_deleted=False
-#                 ).count()
-#                 data = {
-#                     "total_no_students": total_no_students,
-#                     "total_students_served": total_students_served
-#                 }
-
-#                 return Response(data, 200)
-#             else:
-#                 return Response({"error": "not a valid datatype"}, 400)
-
-#         except jwt.ExpiredSignatureError:
-#             return Response({'error': 'Token expired'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except jwt.InvalidTokenError:
-#             return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
-#         except User.DoesNotExist:
-#             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
 from user.models import Customer
+from canteen.models import PreInformedLeave
+
 class StudentsServedData(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -543,10 +438,13 @@ class StudentsServedData(APIView):
 
             total_students_served_today = StudentAttendance.objects.filter(eaten_date=now.date(),status=True,
                     is_deleted=False).count()
+            
+            total_no_students_on_leave = PreInformedLeave.objects.filter(start_date__lte=now.date(),end_date__gte=now.date()).count()
                 
             today_data = {
                     "total_no_students": total_no_students,
-                    "total_students_served": total_students_served_today
+                    "total_students_served": total_students_served_today,
+                    "total_no_of_students_to_serve": total_no_students -  total_no_students_on_leave 
                 }
 
 

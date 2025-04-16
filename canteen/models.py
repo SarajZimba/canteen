@@ -33,3 +33,5 @@ class tblmissedattendance(BaseModel):
     missed_date = models.DateField(null=True, blank=True)
     day = models.CharField(max_length=255, null=True, blank=True)
     pre_informed = models.BooleanField(null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    considered_next_month = models.BooleanField(default=False)
