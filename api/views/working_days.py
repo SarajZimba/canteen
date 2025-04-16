@@ -19,4 +19,29 @@ class WorkingDaysAPI(APIView):
         except Exception as e :
             return Response({"error": str(e) }, 400)
 
+from datetime import datetime
+
+class HolidayAPI(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data  # Expecting a list of date strings
+        failed_dates = []
+
+        for datum in data:
+            try:
+                # Validate date format (optional but good practice)
+                date_obj = datetime.strptime(datum, "%Y-%m-%d").date()
+                working_day = WorkingDays.objects.filter(working_date=date_obj)
+                if working_day.exists():
+                    working_day.delete()
+            except ValueError:
+                failed_dates.append(datum)
+
+        if failed_dates:
+            return Response({"error": f"Invalid date format for: {failed_dates}"}, status=400)
+
+        return Response({"message": "Holidays have been added"}, status=200)
+
+
+
+
         

@@ -26,25 +26,6 @@ class StudentCanteenAttendanceMixin(IsAdminMixin):
     ]
 
 
-# class StudentCanteenAttendanceList(StudentCanteenAttendanceMixin, ListView):
-#     template_name = "studentcanteenattendance/studentcanteenattendance_list.html"
-#     def get_queryset(self):
-#         # Query to calculate the number of meals eaten by each student
-#         meal_eatens_by_students = (
-#             StudentAttendance.objects
-#             .filter(status=True, is_deleted=False, bill_created=False)  # Apply filters
-#             .values('student', 'student__name','student__student_class', 'student__roll_no', 'student__section')  # Returns a list of dicts with student ids
-#             .annotate(no_of_entries=Count('id'))  # Count entries per student
-#             .order_by('-no_of_entries')  # Optional: Sort by most meals eaten
-#         )
-#         return meal_eatens_by_students
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         # Add 'meal_eatens_by_students' to context
-#         context['meal_eatens_by_students'] = self.get_queryset()
-#         return context
-
 from django.db.models import Count, Sum
 from django.shortcuts import render
 from .models import StudentAttendance

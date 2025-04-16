@@ -40,3 +40,19 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
     # def get_product_rate(self, obj):
     #     item = Product.objects.filter(is_canteen_item=True).first()
     #     return item.price if item else 0.0 
+
+# serializers.py
+from rest_framework import serializers
+from canteen.models import PreInformedLeave
+
+class PreInformedLeaveSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PreInformedLeave
+        exclude = [
+            "created_at",
+            "updated_at",
+            "status",
+            "is_deleted",
+            "sorting_order",
+            "is_featured"
+        ]

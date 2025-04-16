@@ -19,4 +19,17 @@ class StudentAttendance(BaseModel):
     
 class WorkingDays(BaseModel):
     working_date = models.DateField(null=True, blank=True)
-    
+
+class PreInformedLeave(BaseModel):
+    student = models.ForeignKey(Customer, models.CASCADE, null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    reason = models.CharField(max_length=255, null=True, blank=True)
+
+
+class tblmissedattendance(BaseModel):
+    student = models.ForeignKey(Customer, models.CASCADE, null=True, blank=True)
+    Lunchtype = models.CharField(max_length=255, null=True, blank=True)
+    missed_date = models.DateField(null=True, blank=True)
+    day = models.CharField(max_length=255, null=True, blank=True)
+    pre_informed = models.BooleanField(null=True, blank=True)
