@@ -10,6 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 
 from api.serializers.canteen import StudentAttendanceSerializer
+from canteen.models import tblmissedattendance_butcharged
 class StudentAttendanceViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -76,7 +77,9 @@ class StudentAttendanceListCreate(APIView):
                 tblmissedattendance_obj = tblmissedattendance.objects.filter(student__id = student_id, missed_date=eaten_date).first()
                 if tblmissedattendance_obj:
                     tblmissedattendance_obj.delete()
-
+                tblmissedattendance_butcharged_obj = tblmissedattendance_butcharged.objects.filter(student__id = student_id, missed_date=eaten_date).first()
+                if tblmissedattendance_butcharged_obj:
+                    tblmissedattendance_butcharged_obj.delete()
         # today_day = datetime.today().strftime("%A")  # e.g., "Monday"  
         # today_day = "Wednesday"  # e.g., "Monday"  
 
@@ -208,20 +211,29 @@ class DatewiseStudentAggregateAttendanceList(APIView):
         # Convert QuerySet to list for JSON response
         individualDataList = serializer.data
         response_data = list(meal_eatens_by_students)
-        # for data in response_data:
-        #     no_of_dinein= data["no_of_entries"]
-        #     rate = data["rate"]
-
-        #     total = no_of_dinein * rate
-
-        #     data["total"] = total
 
         for item in individualDataList:
             item["rate"] = float(item["rate"])
             item["total"] = float(item["total"])
+
+        missed_charged_data = (
+            tblmissedattendance_butcharged.objects
+            .filter(status=True, is_deleted=False, missed_date__range=[from_date, to_date])
+            .values(
+                'id',
+                'student_id',
+                'student__name',
+                'Lunchtype',
+                'rate',
+                'product_id',
+                'product__title',
+                'missed_date'
+            )
+        )
+
         if not response_data:
             return Response({"message": "No attendance records found for the given date range."}, status=200)
-        return Response({"aggregated_data" :response_data, "individual_data": individualDataList}, status=200)
+        return Response({"aggregated_data" :response_data, "individual_data": individualDataList,"missedattendance_charged": list(missed_charged_data)}, status=200)
 
 
 from canteen.utils import create_student_bills

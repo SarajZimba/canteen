@@ -251,7 +251,7 @@ def create_student_bills_for_class(student_class):
 
 
 from datetime import timedelta
-from canteen.models import PreInformedLeave, tblmissedattendance
+from canteen.models import PreInformedLeave, tblmissedattendance, WorkingDays, tblmissedattendance_butcharged
 def check_studentattendance_forleave(data):
     
     # If no attendance data provided, nothing to check
@@ -343,9 +343,24 @@ def check_studentattendance_forleave(data):
             )
             print(f"student {student.name} missed {missed_product.title} on {day_of_week} and {attendance_date} with preinform True")
         else:
-            # Check attendance for previous 2 days
-            prev_day1 = attendance_date - timedelta(days=1)
-            prev_day2 = attendance_date - timedelta(days=2)
+
+            # # Check for previous 2 working days
+            # working_days = list(
+            #     WorkingDays.objects.filter(date__lt=attendance_date)
+            #     .order_by('-date')
+            #     .values_list('date', flat=True)
+            # )
+
+            working_days = list(
+                WorkingDays.objects.filter(working_date__lt=attendance_date)
+                .order_by('-working_date')
+                .values_list('working_date', flat=True)[:2]
+            )
+
+            if len(working_days) < 2:
+                print(f"Not enough previous working days before {attendance_date} for student {student.name}")
+                continue
+            prev_day1, prev_day2 = working_days
             
             # Check if student was absent both previous days
             was_absent_prev_day1 = not StudentAttendance.objects.filter(
@@ -389,6 +404,34 @@ def check_studentattendance_forleave(data):
 
                 print(f"student {student.name} missed {missed_product.title} on {day_of_week} and {attendance_date} with preinform False")
 
+            else:
+                if day_of_week == "Wednesday":   
+
+                    student_meal_preference = student.meal_preference
+
+                    if student_meal_preference == "nonveg":
+                        missed_product = nonveg_canteen_product
+                    else:
+                        missed_product = veg_canteen_product
+
+                elif day_of_week == "Friday":
+                    student_meal_preference = student.meal_preference
+                    if student_meal_preference == "egg" or student_meal_preference == "nonveg":
+                        missed_product = egg_canteen_product
+                    else:
+                        missed_product = veg_canteen_product
+                else:
+                    missed_product = veg_canteen_product
+                tblmissedattendance_butcharged.objects.create(
+                    student=student,
+                    Lunchtype=student.meal_preference,
+                    missed_date=attendance_date,
+                    product=missed_product,
+                    rate=missed_product.price
+                ) 
+                print(f"student {student.name} missed {missed_product.title} on {day_of_week} and {attendance_date} and was charged for it")
+               
+                
 def check_if_absentdata_already_populated(student, attendance_date):
     if tblmissedattendance.objects.filter(student=student, missed_date= attendance_date).exists():
         return True
@@ -441,6 +484,8 @@ def create_advance_bills_for_class(student_class):
     students = Customer.objects.filter(student_class=student_class)
 
     for student in students:
+
+        discount_applied = student.discount_applicable
         # Initialize counters
         product_counter = defaultdict(int)
         
@@ -522,9 +567,21 @@ def create_advance_bills_for_class(student_class):
             bill_items.append(bill_item)
 
         tax_amount = sub_total * 0.13
-        grand_total = sub_total + tax_amount
-        amount_in_words = convert_amount_to_words(grand_total)
 
+
+
+        if discount_applied is not None:
+            if discount_applied.discount_type == "PCT":
+                discount_percent = discount_applied.discount_amount
+
+                discount_amount  = (discount_percent/100) * sub_total
+            if discount_applied.discount_type == "FLAT":
+                discount_amount = discount_applied.discount_amount
+        else:
+            discount_amount = 0.0                     
+
+        grand_total = sub_total + tax_amount - discount_amount
+        amount_in_words = convert_amount_to_words(grand_total)
         bill = Bill.objects.create(
             branch=branch,
             transaction_miti=transaction_miti,
@@ -538,7 +595,7 @@ def create_advance_bills_for_class(student_class):
             transaction_date_time=transaction_date_time,
             transaction_date=transaction_date,
             sub_total=sub_total,
-            discount_amount=0.0,
+            discount_amount=discount_amount,
             taxable_amount=sub_total,
             tax_amount=tax_amount,
             grand_total=grand_total,

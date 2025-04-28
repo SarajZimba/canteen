@@ -3,10 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from canteen.models import WorkingDays
+from rest_framework.permissions import IsAuthenticated
 
 from api.serializers.working_days import WorkingDaysSerializer
 
 class WorkingDaysAPI(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         data = request.data
 
@@ -22,6 +24,7 @@ class WorkingDaysAPI(APIView):
 from datetime import datetime
 
 class HolidayAPI(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request, *args, **kwargs):
         data = request.data  # Expecting a list of date strings
         failed_dates = []

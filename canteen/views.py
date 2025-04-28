@@ -74,11 +74,14 @@ class StudentCanteenAttendanceList(StudentCanteenAttendanceMixin, ListView):
         #     total = no_of_dinein * data["rate"]  # Calculate total amount
         #     data["total"] = total  # Add total to context
         
-        distinct_classes = StudentAttendance.objects.filter(status=True, is_deleted=False, bill_created=False) \
-            .values('student__student_class') \
+        # distinct_classes = StudentAttendance.objects.filter(status=True, is_deleted=False, bill_created=False) \
+        #     .values('student__student_class') \
+        #     .distinct()
+        distinct_classes = Customer.objects.filter(status=True, is_deleted=False) \
+            .values('student_class') \
             .distinct()
         # Convert the queryset into the desired format (key-value pair)
-        distinct_classes = [{'student__student_class': item['student__student_class']} for item in distinct_classes]
+        distinct_classes = [{'student__student_class': item['student_class']} for item in distinct_classes]
 
         # Remove duplicates by using a set for uniqueness
         distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]

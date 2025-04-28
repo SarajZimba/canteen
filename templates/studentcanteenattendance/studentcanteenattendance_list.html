@@ -35,17 +35,9 @@
 
     <!-- Check if there are any students for the selected class -->
     {% if request.GET.student_class %}
-        {% if meal_eatens_by_students %}
-            <!-- Button to create bills for selected class -->
             <div class="mb-3">
                 <button id="createBillsBtn" class="btn btn-success">Create Bills for Class {{ request.GET.student_class }}</button>
             </div>
-        {% else %}
-            <!-- No students found for the selected class -->
-            <div class="alert alert-info">
-                No attendance found for this class.
-            </div>
-        {% endif %}
     {% endif %}
 
     <!-- Bootstrap Table -->
