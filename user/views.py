@@ -257,21 +257,37 @@ def upload_customer_excel(request):
 
             for index, row in enumerate(sheet.iter_rows(min_row=2), start=2):  # Skip header row
                 try:
-                    fname = str(row[0].value).strip() if row[0].value else ""
-                    mname = str(row[1].value).strip() if row[1].value else ""
-                    lname = str(row[2].value).strip() if row[2].value else ""
-                    roll_no = str(row[3].value).strip() if row[3].value else None
-                    student_class = str(row[4].value).strip() if row[4].value else None
-                    section = str(row[5].value).strip() if row[5].value else ""
-                    lunch_type = str(row[6].value).strip().lower() if row[6].value else ""
+                    # fname = str(row[0].value).strip() if row[0].value else ""
+                    # mname = str(row[1].value).strip() if row[1].value else ""
+                    # lname = str(row[2].value).strip() if row[2].value else ""
+                    # roll_no = str(row[3].value).strip() if row[3].value else None
+                    # student_class = str(row[4].value).strip() if row[4].value else None
+                    # section = str(row[5].value).strip() if row[5].value else ""
+                    # lunch_type = str(row[6].value).strip().lower() if row[6].value else ""
 
-                    full_name = f"{fname} {mname} {lname}".strip()
+                    # fname = str(row[0].value).strip() if row[0].value else ""
+                    # # mname = str(row[1].value).strip() if row[1].value else ""
+                    # lname = str(row[1].value).strip() if row[1].value else ""
+                    # roll_no = str(row[2].value).strip() if row[2].value else None
+                    # student_class = str(row[3].value).strip() if row[3].value else None
+                    # section = str(row[5].value).strip() if row[5].value else ""
+                    # lunch_type = str(row[4].value).strip().lower() if row[4].value else ""
 
-                    if lunch_type in ['non veg', 'nonveg']:
+                    # # full_name = f"{fname} {mname} {lname}".strip()
+                    # full_name = f"{fname} {lname}".strip()
+
+                    full_name = str(row[0].value).strip() if row[0].value else ""
+                    roll_no = str(row[1].value).strip() if row[1].value else None                    
+                    lunch_type = str(row[2].value).strip().lower() if row[2].value else ""
+                    section = str(row[3].value).strip() if row[3].value else ""
+                    student_class = int(row[4].value) if row[4].value else None
+
+
+                    if lunch_type in ['non veg', 'nonveg', 'non-veg']:
                         meal_preference = 'nonveg'
-                    elif lunch_type == 'veg':
+                    elif lunch_type in ['veg', 'Veg']:
                         meal_preference = 'veg'
-                    elif lunch_type == 'egg':
+                    elif lunch_type in ['egg', 'Egg']:
                         meal_preference = 'egg'
                     else:
                         meal_preference = 'unknown'

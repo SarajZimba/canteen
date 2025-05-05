@@ -11,26 +11,200 @@ from rest_framework.permissions import IsAuthenticated
 
 from api.serializers.canteen import StudentAttendanceSerializer
 from canteen.models import tblmissedattendance_butcharged
+
 class StudentAttendanceViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
-
-    queryset = StudentAttendance.objects.filter(is_deleted= False, status=True)
+    queryset = StudentAttendance.objects.filter(is_deleted=False, status=True)
     serializer_class = StudentAttendanceSerializer
 
-    # def delete(self, request, *args, **kwargs):
-    def destroy(self, request, *args, **kwargs):
-        # Retrieve the object to be deleted
-        student_attendance = self.get_object()
+    # def destroy(self, request, *args, **kwargs):
+    #     student_attendance = self.get_object()
+        
+    #     # Check if the attendance record is associated with a bill
+    #     if student_attendance.bill_created:
+    #         return Response(
+    #             {"detail": "Cannot delete attendance because a bill exists."},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
+        
+    #     # Get the noeatbutcharged flag from request data
+    #     noeatbutcharged = request.data.get('noeatbutcharged', False)
+        
+    #     # Get student and date info
+    #     student = student_attendance.student
+    #     date = student_attendance.eaten_date
+    #     day_of_week = date.strftime("%A")
+        
+    #     # Get appropriate product based on day and meal preference
+    #     if day_of_week == "Wednesday":
+    #         if student.meal_preference == "nonveg":
+    #             product = Product.objects.filter(
+    #                 is_canteen_item=True, 
+    #                 lunch_type="nonveg",
+    #                 min_class__lte=student.student_class,
+    #                 max_class__gte=student.student_class
+    #             ).first()
+    #         else:
+    #             product = Product.objects.filter(
+    #                 is_canteen_item=True, 
+    #                 lunch_type="veg",
+    #                 min_class__lte=student.student_class,
+    #                 max_class__gte=student.student_class
+    #             ).first()
+    #     elif day_of_week == "Friday":
+    #         if student.meal_preference in ["egg", "nonveg"]:
+    #             product = Product.objects.filter(
+    #                 is_canteen_item=True, 
+    #                 lunch_type="egg",
+    #                 min_class__lte=student.student_class,
+    #                 max_class__gte=student.student_class
+    #             ).first()
+    #         else:
+    #             product = Product.objects.filter(
+    #                 is_canteen_item=True, 
+    #                 lunch_type="veg",
+    #                 min_class__lte=student.student_class,
+    #                 max_class__gte=student.student_class
+    #             ).first()
+    #     else:
+    #         product = Product.objects.filter(
+    #             is_canteen_item=True, 
+    #             lunch_type="veg",
+    #             min_class__lte=student.student_class,
+    #             max_class__gte=student.student_class
+    #         ).first()
+        
+    #     if not product:
+    #         return Response(
+    #             {"detail": "Could not find appropriate product for this student."},
+    #             status=status.HTTP_400_BAD_REQUEST
+    #         )
+        
+    #     # Create record based on the flag
+    #     if noeatbutcharged:
+    #         # Create record in tblmissedattendance_butcharged
+    #         tblmissedattendance_butcharged.objects.create(
+    #             student=student,
+    #             Lunchtype=student.meal_preference,
+    #             missed_date=date,
+    #             product=product,
+    #             rate=product.price
+    #         )
+    #     else:
+    #         # Create record in tblmissedattendance
+    #         tblmissedattendance.objects.create(
+    #             student=student,
+    #             Lunchtype=student.meal_preference,
+    #             missed_date=date,
+    #             day=day_of_week,
+    #             pre_informed=False,
+    #             product=product
+    #         )
+        
+    #     # Proceed with deletion
+    #     return super().destroy(request, *args, **kwargs)
 
+    def destroy(self, request, *args, **kwargs):
+        student_attendance = self.get_object()
+        
         # Check if the attendance record is associated with a bill
-        if student_attendance.bill_created == True:
+        if student_attendance.bill_created:
             return Response(
                 {"detail": "Cannot delete attendance because a bill exists."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # If no bill exists, proceed with deletion
-        return super().destroy(request, *args, **kwargs)
+        # Get the noeatbutcharged flag from request data
+        noeatbutcharged = request.data.get('noeatbutcharged', False)
+        
+        # Get student and date info
+        student = student_attendance.student
+        date = student_attendance.eaten_date
+        day_of_week = date.strftime("%A")
+        
+        # Get appropriate product based on day and meal preference
+        if day_of_week == "Wednesday":
+            if student.meal_preference == "nonveg":
+                product = Product.objects.filter(
+                    is_canteen_item=True, 
+                    lunch_type="nonveg",
+                    min_class__lte=student.student_class,
+                    max_class__gte=student.student_class
+                ).first()
+            else:
+                product = Product.objects.filter(
+                    is_canteen_item=True, 
+                    lunch_type="veg",
+                    min_class__lte=student.student_class,
+                    max_class__gte=student.student_class
+                ).first()
+        elif day_of_week == "Friday":
+            if student.meal_preference in ["egg", "nonveg"]:
+                product = Product.objects.filter(
+                    is_canteen_item=True, 
+                    lunch_type="egg",
+                    min_class__lte=student.student_class,
+                    max_class__gte=student.student_class
+                ).first()
+            else:
+                product = Product.objects.filter(
+                    is_canteen_item=True, 
+                    lunch_type="veg",
+                    min_class__lte=student.student_class,
+                    max_class__gte=student.student_class
+                ).first()
+        else:
+            product = Product.objects.filter(
+                is_canteen_item=True, 
+                lunch_type="veg",
+                min_class__lte=student.student_class,
+                max_class__gte=student.student_class
+            ).first()
+        
+        if not product:
+            return Response(
+                {"detail": "Could not find appropriate product for this student."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Create record based on the flag
+        if noeatbutcharged:
+            # Create record in tblmissedattendance_butcharged
+            tblmissedattendance_butcharged.objects.create(
+                student=student,
+                Lunchtype=student.meal_preference,
+                missed_date=date,
+                product=product,
+                rate=product.price
+            )
+            message = "Attendance deleted and marked as missed but charged"
+        else:
+            # Create record in tblmissedattendance
+            tblmissedattendance.objects.create(
+                student=student,
+                Lunchtype=student.meal_preference,
+                missed_date=date,
+                day=day_of_week,
+                pre_informed=False,
+                product=product
+            )
+            message = "Attendance deleted and marked as missed (not charged)"
+        
+        # Perform the deletion
+        self.perform_destroy(student_attendance)
+        
+        # Return success response
+        return Response(
+            {
+                "status": "success",
+                "message": message,
+                "deleted_attendance_id": student_attendance.id,
+                "student_id": student.id,
+                "date": date
+            },
+            status=status.HTTP_200_OK
+    )
+
 
 
 
@@ -40,6 +214,7 @@ from django.db import transaction
 from datetime import datetime
 from canteen.utils import check_studentattendance_forleave
 from canteen.models import tblmissedattendance
+from canteen.models import WorkingDays
 
 class StudentAttendanceListCreate(APIView):
     permission_classes = [IsAuthenticated]
@@ -80,17 +255,56 @@ class StudentAttendanceListCreate(APIView):
                 tblmissedattendance_butcharged_obj = tblmissedattendance_butcharged.objects.filter(student__id = student_id, missed_date=eaten_date).first()
                 if tblmissedattendance_butcharged_obj:
                     tblmissedattendance_butcharged_obj.delete()
-        # today_day = datetime.today().strftime("%A")  # e.g., "Monday"  
-        # today_day = "Wednesday"  # e.g., "Monday"  
 
-        veg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg").first()
-        veg_product_rate = veg_canteen_product.price if veg_canteen_product else 0.0
+                # Now check future working days (next 2) to see if this attendance affects any missed records
+                try:
+                    eaten_date_obj = datetime.strptime(eaten_date, "%Y-%m-%d").date()
+                    
+                    # Get next 2 working days after the eaten_date
+                    next_working_days = WorkingDays.objects.filter(
+                        working_date__gt=eaten_date_obj
+                    ).order_by('working_date')[:2]
+                    
+                    for working_day in next_working_days:
+                        # Check if there are any missed attendance records for this student
+                        # on these future working days that were created based on previous absence
+                        # tblmissedattendance.objects.filter(
+                        #     student__id=student_id,
+                        #     missed_date=working_day.working_date
+                        # ).delete()
+                        print(working_day.working_date)
+                        tblmissedobj = tblmissedattendance.objects.filter(
+                            student__id=student_id,
+                            missed_date=working_day.working_date
+                        ).first()
 
-        nonveg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg").first()
-        nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
+                        if tblmissedobj:
+                            tblmissedattendance_butcharged.objects.create(
+                                student=tblmissedobj.student,
+                                missed_date=working_day.working_date,
+                                Lunchtype=tblmissedobj.Lunchtype,
+                                rate=tblmissedobj.product.price,
+                                product = tblmissedobj.product
+                            )     
+                            
 
-        egg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg").first()
-        egg_product_rate = egg_canteen_product.price if egg_canteen_product else 0.0
+                            tblmissedobj.delete()
+                        # tblmissedattendance_butcharged.objects.filter(
+                        #     student__id=student_id,
+                        #     missed_date=working_day.working_date
+                        # ).delete()
+                        
+                except Exception as e:
+                    print(f"Error processing future working days: {str(e)}")
+
+        # veg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg").first()
+        # veg_product_rate = veg_canteen_product.price if veg_canteen_product else 0.0
+
+        # nonveg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg").first()
+        # nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
+
+        # egg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg").first()
+        # egg_product_rate = egg_canteen_product.price if egg_canteen_product else 0.0
 
 
         for datum in data:
@@ -98,12 +312,22 @@ class StudentAttendanceListCreate(APIView):
 
             # Convert eaten_date string to day of the week
             today_day = datetime.strptime(eaten_date_str, "%Y-%m-%d").strftime("%A")
+            student = Customer.objects.filter(id=datum["student"]).first()
+            nonveg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+            nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
+
+            veg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+            veg_product_rate = veg_canteen_product.price if veg_canteen_product else 0.0
+
+            egg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+            egg_product_rate = egg_canteen_product.price if egg_canteen_product else 0.0
             if today_day == "Wednesday":   
-                student = Customer.objects.filter(id=datum["student"]).first()
                 if student:
                     student_meal_preference = student.meal_preference
 
                     if student_meal_preference == "nonveg":
+
+                        nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
                         datum["product"] = nonveg_canteen_product.id
                         datum["rate"] = nonveg_product_rate
                         datum["total"] = nonveg_product_rate
@@ -115,7 +339,6 @@ class StudentAttendanceListCreate(APIView):
                     print("Student id came null for wednesday meal preference")
 
             elif today_day == "Friday":
-                student = Customer.objects.filter(id=datum["student"]).first()
                 if student:
                     student_meal_preference = student.meal_preference
                     if student_meal_preference == "egg" or student_meal_preference == "nonveg":
@@ -388,8 +611,12 @@ class CheckoutClassBills(APIView):
         if student_class:
             try:
                 # create_student_bills_for_class(student_class)
-                create_advance_bills_for_class(student_class)
-                return Response({"data": f"Bills created for class {student_class}"}, 200)
+                result = create_advance_bills_for_class(student_class)
+                # return Response({"data": f"Bills created for class {student_class}"}, 200)
+                if result['success']:
+                    return Response({"data": result['message']}, status=200)
+                else:
+                    return Response({"error": result['message']}, status=400)
             except Exception as e:
                 print(f"Error in creating bill for class {student_class} with {e}")
                 return Response({"error": f"Error in creating bills for class {student_class}", }, 400)
@@ -438,43 +665,407 @@ from canteen.models import PreInformedLeave
 class StudentsServedData(APIView):
     permission_classes = [IsAuthenticated]
 
-
     def get(self, request):
         from datetime import datetime
         from django.utils import timezone
+        from django.db.models import Count, Q
 
-        now = timezone.now()  # safer for timezone-aware datetimes
+        now = timezone.now()
 
         try:
-            total_no_students = Customer.objects.filter(student_class__isnull=False, status=True, is_deleted=False).count()
+            # Define class groups
+            class_groups = {
+                '1-5': (1, 5),
+                '6-10': (6, 10),
+                '11-12': (11, 12)
+            }
 
-            total_students_served_today = StudentAttendance.objects.filter(eaten_date=now.date(),status=True,
-                    is_deleted=False).count()
-            
-            total_no_students_on_leave = PreInformedLeave.objects.filter(start_date__lte=now.date(),end_date__gte=now.date()).count()
-                
-            today_data = {
-                    "total_no_students": total_no_students,
-                    "total_students_served": total_students_served_today,
-                    "total_no_of_students_to_serve": total_no_students -  total_no_students_on_leave 
-                }
+            # Initialize response structure
+            response_data = {
+                "today": {},
+                "month": {}
+            }
 
+            # Process each class group
+            for group_name, (start_class, end_class) in class_groups.items():
+                # Total students in this group
+                total_in_group = Customer.objects.filter(
+                    student_class__gte=start_class,
+                    student_class__lte=end_class,
+                    status=True,
+                    is_deleted=False
+                ).count()
 
+                # Today's data for this group
+                students_served_today = StudentAttendance.objects.filter(
+                    student__student_class__gte=start_class,
+                    student__student_class__lte=end_class,
+                    eaten_date=now.date(),
+                    status=True,
+                    is_deleted=False
+                ).count()
 
-            total_students_served_month = StudentAttendance.objects.filter(
+                on_leave_today = PreInformedLeave.objects.filter(
+                    student__student_class__gte=start_class,
+                    student__student_class__lte=end_class,
+                    start_date__lte=now.date(),
+                    end_date__gte=now.date()
+                ).count()
+
+                # Monthly data for this group
+                students_served_month = StudentAttendance.objects.filter(
+                    student__student_class__gte=start_class,
+                    student__student_class__lte=end_class,
                     eaten_date__year=now.year,
                     eaten_date__month=now.month,
                     status=True,
                     is_deleted=False
                 ).count()
-            month_data = {
-                    "total_no_students": total_no_students,
-                    "total_students_served": total_students_served_month
+
+                # Add to response
+                response_data["today"][group_name] = {
+                    "total_no_students": total_in_group,
+                    "total_students_served": students_served_today,
+                    "total_no_of_students_to_serve": total_in_group - on_leave_today
                 }
-            data = {
-                "today": today_data,
-                "month": month_data
+
+                response_data["month"][group_name] = {
+                    "total_no_students": total_in_group,
+                    "total_students_served": students_served_month
+                }
+
+            # Add overall totals
+            overall_total = Customer.objects.filter(
+                student_class__isnull=False,
+                status=True,
+                is_deleted=False
+            ).count()
+
+            overall_served_today = StudentAttendance.objects.filter(
+                eaten_date=now.date(),
+                status=True,
+                is_deleted=False
+            ).count()
+
+            overall_on_leave = PreInformedLeave.objects.filter(
+                start_date__lte=now.date(),
+                end_date__gte=now.date()
+            ).count()
+
+            overall_served_month = StudentAttendance.objects.filter(
+                eaten_date__year=now.year,
+                eaten_date__month=now.month,
+                status=True,
+                is_deleted=False
+            ).count()
+
+            response_data["today"]["overall"] = {
+                "total_no_students": overall_total,
+                "total_students_served": overall_served_today,
+                "total_no_of_students_to_serve": overall_total - overall_on_leave
             }
-            return Response(data, 200)
-        except Exception as e :
+
+            response_data["month"]["overall"] = {
+                "total_no_students": overall_total,
+                "total_students_served": overall_served_month
+            }
+
+            return Response(response_data, 200)
+
+        except Exception as e:
             return Response({"error": str(e)}, 400)
+
+from canteen.utils import create_advance_bills_for_class_by_month
+# class CheckoutClassBillsByMonth(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, *args, **kwargs):
+#         data = request.data
+#         student_class = data.get("class", None)
+#         month = data.get("month", None)
+#         year = data.get("year", None)
+
+#         if not all([student_class, month, year]):
+#             return Response({"error": "Class, month and year are required"}, status=400)
+
+#         try:
+#             month = int(month)
+#             year = int(year)
+#             create_advance_bills_for_class_by_month(student_class, month, year)
+#             return Response({"data": f"Bills created for class {student_class} for {month}/{year}"}, status=200)
+#         except Exception as e:
+#             print(f"Error in creating bill for class {student_class} with {e}")
+#             return Response({"error": f"Error in creating bills for class {student_class}"}, status=400)
+
+class CheckoutClassBillsByMonth(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        student_class = data.get("class", None)
+        month = data.get("month", None)
+        year = data.get("year", None)
+
+        if not all([student_class, month, year]):
+            return Response({"error": "Class, month and year are required"}, status=400)
+
+        try:
+            month = int(month)
+            year = int(year)
+            result = create_advance_bills_for_class_by_month(student_class, month, year)
+            if result['success']:
+                return Response({"data": result['message']}, status=200)
+            else:
+                return Response({"error": result['message']}, status=400)
+        except Exception as e:
+            print(f"Error in creating bill for class {student_class} with {e}")
+            return Response({"error": f"Error in creating bills for class {student_class}"}, status=400)
+        
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime
+from django.db.models import Q
+from canteen.models import StudentAttendance, tblmissedattendance, tblmissedattendance_butcharged
+from user.models import Customer
+
+# class MonthlyAttendanceReportAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+    
+#     def get(self, request):
+#         month = request.query_params.get('month')
+#         year = request.query_params.get('year')
+        
+#         if not month or not year:
+#             return Response(
+#                 {"error": "Both month and year parameters are required"},
+#                 status=400
+#             )
+        
+#         try:
+#             month = int(month)
+#             year = int(year)
+#             if month < 1 or month > 12:
+#                 raise ValueError
+#         except ValueError:
+#             return Response(
+#                 {"error": "Invalid month or year format. Month must be 1-12, year must be integer"},
+#                 status=400
+#             )
+        
+#         # Calculate date range for the month
+#         if month == 12:
+#             month_end = datetime(year+1, 1, 1).date()
+#         else:
+#             month_end = datetime(year, month+1, 1).date()
+#         month_start = datetime(year, month, 1).date()
+        
+#         # Get all student attendance records for the month
+#         student_attendances = StudentAttendance.objects.filter(
+#             eaten_date__gte=month_start,
+#             eaten_date__lt=month_end
+#         ).select_related('student', 'product')
+        
+#         # Get all missed attendance records for the month
+#         missed_attendances = tblmissedattendance.objects.filter(
+#             missed_date__gte=month_start,
+#             missed_date__lt=month_end
+#         ).select_related('student', 'product')
+        
+#         # Get all but-charged records for the month
+#         but_charged_attendances = tblmissedattendance_butcharged.objects.filter(
+#             missed_date__gte=month_start,
+#             missed_date__lt=month_end
+#         ).select_related('student', 'product')
+        
+#         # Prepare response data
+#         response_data = {
+#             "month": month,
+#             "year": year,
+#             "student_attendances": [],
+#             "missed_attendances": [],
+#             "but_charged_attendances": []
+#         }
+        
+#         # Process student attendances
+#         for attendance in student_attendances:
+#             response_data["student_attendances"].append({
+#                 "id": attendance.id,
+#                 "student": {
+#                     "id": attendance.student.id,
+#                     "name": attendance.student.name,
+#                     "class": attendance.student.student_class,
+#                     "section": attendance.student.section
+#                 },
+#                 "date": attendance.eaten_date,
+#                 "day": attendance.eaten_date.strftime("%A"),
+#                 "product": attendance.product.title if attendance.product else None,
+#                 "rate": float(attendance.rate),
+#                 "total": float(attendance.total),
+#                 "bill_created": attendance.bill_created
+#             })
+        
+#         # Process missed attendances
+#         for missed in missed_attendances:
+#             response_data["missed_attendances"].append({
+#                 "id": missed.id,
+#                 "student": {
+#                     "id": missed.student.id,
+#                     "name": missed.student.name,
+#                     "class": missed.student.student_class,
+#                     "section": missed.student.section
+#                 },
+#                 "date": missed.missed_date,
+#                 "day": missed.day,
+#                 "product": missed.product.title if missed.product else None,
+#                 "lunch_type": missed.Lunchtype,
+#                 "pre_informed": missed.pre_informed,
+#                 "considered_next_month": missed.considered_next_month
+#             })
+        
+#         # Process but-charged attendances
+#         for charged in but_charged_attendances:
+#             response_data["but_charged_attendances"].append({
+#                 "id": charged.id,
+#                 "student": {
+#                     "id": charged.student.id,
+#                     "name": charged.student.name,
+#                     "class": charged.student.student_class,
+#                     "section": charged.student.section
+#                 },
+#                 "date": charged.missed_date,
+#                 "product": charged.product.title if charged.product else None,
+#                 "lunch_type": charged.Lunchtype,
+#                 "rate": float(charged.rate)
+#             })
+        
+#         return Response(response_data)
+
+
+class MonthlyAttendanceReportAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        student_id = request.query_params.get('student_id')  # Get student_id from query params
+        
+        if not month or not year:
+            return Response(
+                {"error": "Both month and year parameters are required"},
+                status=400
+            )
+        
+        try:
+            month = int(month)
+            year = int(year)
+            if month < 1 or month > 12:
+                raise ValueError
+            if student_id:
+                student_id = int(student_id)  # Convert to int if provided
+        except ValueError:
+            return Response(
+                {"error": "Invalid parameters. Month must be 1-12, year and student_id must be integers"},
+                status=400
+            )
+        
+        # Calculate date range for the month
+        if month == 12:
+            month_end = datetime(year+1, 1, 1).date()
+        else:
+            month_end = datetime(year, month+1, 1).date()
+        month_start = datetime(year, month, 1).date()
+        
+        # Base querysets with date filtering
+        student_qs = StudentAttendance.objects.filter(
+            eaten_date__gte=month_start,
+            eaten_date__lt=month_end
+        )
+        missed_qs = tblmissedattendance.objects.filter(
+            missed_date__gte=month_start,
+            missed_date__lt=month_end
+        )
+        charged_qs = tblmissedattendance_butcharged.objects.filter(
+            missed_date__gte=month_start,
+            missed_date__lt=month_end
+        )
+        
+        # Add student filter if student_id is provided
+        if student_id:
+            student_qs = student_qs.filter(student_id=student_id)
+            missed_qs = missed_qs.filter(student_id=student_id)
+            charged_qs = charged_qs.filter(student_id=student_id)
+        
+        # Execute queries with select_related
+        student_attendances = student_qs.select_related('student', 'product')
+        missed_attendances = missed_qs.select_related('student', 'product')
+        but_charged_attendances = charged_qs.select_related('student', 'product')
+        
+        # Prepare response data
+        response_data = {
+            "month": month,
+            "year": year,
+            "student_id": student_id,
+            "student_attendances": [],
+            "missed_attendances": [],
+            "but_charged_attendances": []
+        }
+        
+        # Process student attendances
+        for attendance in student_attendances:
+            response_data["student_attendances"].append({
+                "id": attendance.id,
+                "student": {
+                    "id": attendance.student.id,
+                    "name": attendance.student.name,
+                    "class": attendance.student.student_class,
+                    "section": attendance.student.section
+                },
+                "date": attendance.eaten_date,
+                "day": attendance.eaten_date.strftime("%A"),
+                "product": attendance.product.title if attendance.product else None,
+                "rate": float(attendance.rate),
+                "total": float(attendance.total),
+                "bill_created": attendance.bill_created
+            })
+        
+        # Process missed attendances
+        for missed in missed_attendances:
+            response_data["missed_attendances"].append({
+                "id": missed.id,
+                "student": {
+                    "id": missed.student.id,
+                    "name": missed.student.name,
+                    "class": missed.student.student_class,
+                    "section": missed.student.section
+                },
+                "date": missed.missed_date,
+                "day": missed.day,
+                "product": missed.product.title if missed.product else None,
+                "lunch_type": missed.Lunchtype,
+                "pre_informed": missed.pre_informed,
+                "considered_next_month": missed.considered_next_month
+            })
+        
+        # Process but-charged attendances
+        for charged in but_charged_attendances:
+            response_data["but_charged_attendances"].append({
+                "id": charged.id,
+                "student": {
+                    "id": charged.student.id,
+                    "name": charged.student.name,
+                    "class": charged.student.student_class,
+                    "section": charged.student.section
+                },
+                "date": charged.missed_date,
+                "product": charged.product.title if charged.product else None,
+                "lunch_type": charged.Lunchtype,
+                "rate": float(charged.rate)
+            })
+        
+        return Response(response_data)
+    
+    
+
+    

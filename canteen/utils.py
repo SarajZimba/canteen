@@ -276,34 +276,31 @@ def check_studentattendance_forleave(data):
 
     # # Find students who are absent (not in present list)
     # absent_students = all_students.filter(id__in=absent_student_ids)
-
-    veg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg").first()
-    veg_product_rate = veg_canteen_product.price if veg_canteen_product else 0.0
-
-    if not veg_canteen_product:
-        print("Warning: Veg product type is missing")
-        return
-
-    nonveg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg").first()
-    nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
-    if not nonveg_canteen_product:
-        print("Warning: Non veg product type is missing")
-        return
-    egg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg").first()
-    egg_product_rate = egg_canteen_product.price if egg_canteen_product else 0.0
-
-    if not egg_canteen_product:
-        print("Warning: Egg product type is missing")
-        return
     
     for student_id in absent_student_ids:
         student = Customer.objects.filter(id=student_id).first()
+
+
 
         if not student:
             print(f"Invalid id for student {student_id}")
             continue  # Skip just this student
         # Check if student has pre-informed leave for this date
-
+        veg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        veg_product_rate = veg_canteen_product.price if veg_canteen_product else 0.0
+        if not veg_canteen_product:
+            print("Warning: Veg product type is missing")
+            return
+        nonveg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        nonveg_product_rate = nonveg_canteen_product.price if nonveg_canteen_product else 0.0
+        if not nonveg_canteen_product:
+            print("Warning: Non veg product type is missing")
+            return
+        egg_canteen_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg", min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        egg_product_rate = egg_canteen_product.price if egg_canteen_product else 0.0
+        if not egg_canteen_product:
+            print("Warning: Egg product type is missing")
+            return
         if check_if_absentdata_already_populated(student, attendance_date):
             continue
         has_preinformed_leave = PreInformedLeave.objects.filter(
@@ -343,13 +340,6 @@ def check_studentattendance_forleave(data):
             )
             print(f"student {student.name} missed {missed_product.title} on {day_of_week} and {attendance_date} with preinform True")
         else:
-
-            # # Check for previous 2 working days
-            # working_days = list(
-            #     WorkingDays.objects.filter(date__lt=attendance_date)
-            #     .order_by('-date')
-            #     .values_list('date', flat=True)
-            # )
 
             working_days = list(
                 WorkingDays.objects.filter(working_date__lt=attendance_date)
@@ -465,21 +455,13 @@ def create_advance_bills_for_class(student_class):
     if not working_days.exists():
         message = "No working days found for current_month"
         print(f"No working days found for {current_month_start.strftime('%B %Y')}")
-        return message
-
-    # Prepare product references
-    veg_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg").first()
-    egg_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg").first()
-    nonveg_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg").first()
-
-    if not veg_product:
-        print("Veg product missing. Cannot proceed.")
-        return
+        return {"success": False, "message": message}  # Return dictionary with success=False
 
     branch = Branch.objects.active().filter(is_central_billing=True).last()
     if not branch:
         print("No central billing branch found")
-        return
+        message = "No central billing branch found"
+        return {"success": False, "message": message}  # Return dictionary with success=False
 
     students = Customer.objects.filter(student_class=student_class)
 
@@ -488,7 +470,22 @@ def create_advance_bills_for_class(student_class):
         discount_applied = student.discount_applicable
         # Initialize counters
         product_counter = defaultdict(int)
-        
+        # Prepare product references
+        veg_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg",min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        if not veg_product:
+            print("Veg product missing. Cannot proceed.")
+            message = "Veg product missing. Cannot proceed."
+            return {"success": False, "message": message}  # Return dictionary with success=False
+        egg_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg",min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        if not egg_product:
+            print("Egg product missing. Cannot proceed.")
+            message = "Egg product missing. Cannot proceed."
+            return {"success": False, "message": message}  # Return dictionary with success=False
+        nonveg_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg",min_class__lte=student.student_class, max_class__gte=student.student_class).first()
+        if not nonveg_product:
+            print("Non Veg product missing. Cannot proceed.")
+            message = "Non Veg product missing. Cannot proceed."
+            return {"success": False, "message": message}  # Return dictionary with success=False       
         # # Get all missed attendance records for current month that haven't been considered yet
         # missed_meals = tblmissedattendance.objects.filter(
         #     student=student,
@@ -566,7 +563,7 @@ def create_advance_bills_for_class(student_class):
             )
             bill_items.append(bill_item)
 
-        tax_amount = sub_total * 0.13
+        # tax_amount = sub_total * 0.13
 
 
 
@@ -578,7 +575,10 @@ def create_advance_bills_for_class(student_class):
             if discount_applied.discount_type == "FLAT":
                 discount_amount = discount_applied.discount_amount
         else:
-            discount_amount = 0.0                     
+            discount_amount = 0.0   
+
+        taxable_amount = sub_total - discount_amount
+        tax_amount = taxable_amount * 0.13                
 
         grand_total = sub_total + tax_amount - discount_amount
         amount_in_words = convert_amount_to_words(grand_total)
@@ -596,7 +596,7 @@ def create_advance_bills_for_class(student_class):
             transaction_date=transaction_date,
             sub_total=sub_total,
             discount_amount=discount_amount,
-            taxable_amount=sub_total,
+            taxable_amount=taxable_amount,
             tax_amount=tax_amount,
             grand_total=grand_total,
             service_charge=0.0,
@@ -608,3 +608,325 @@ def create_advance_bills_for_class(student_class):
 
         bill.bill_items.add(*bill_items)
         print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {current_month_start.strftime('%B %Y')})")
+    return {"success": True, "message": f"Bills created for class {student_class} (Month: {current_month_start.strftime('%B %Y')})"}
+
+# def create_advance_bills_for_class_by_month(student_class, month, year):
+#     nepal_tz = pytz.timezone("Asia/Kathmandu")
+
+#     # Calculate month start and end dates
+#     month_start = datetime(year, month, 1, tzinfo=nepal_tz)
+#     if month == 12:
+#         month_end = datetime(year+1, 1, 1, tzinfo=nepal_tz) - timedelta(days=1)
+#     else:
+#         month_end = datetime(year, month+1, 1, tzinfo=nepal_tz) - timedelta(days=1)
+
+#     transaction_date_time = datetime.now(nepal_tz).strftime("%Y-%m-%d %H:%M:%S")
+#     transaction_date = datetime.now(nepal_tz).strftime("%Y-%m-%d")
+#     transaction_miti = nepali_date.today()
+
+#     working_days = WorkingDays.objects.filter(
+#         working_date__gte=month_start.date(),
+#         working_date__lte=month_end.date()
+#     ).values_list('working_date', flat=True).order_by('working_date')
+
+#     if not working_days.exists():
+#         message = f"No working days found for {month_start.strftime('%B %Y')}"
+#         print(message)
+#         return {"success": False, "message": message}  # Return dictionary with success=False
+
+#     branch = Branch.objects.active().filter(is_central_billing=True).last()
+#     if not branch:
+#         message = "No central billing branch found"
+#         return {"success": False, "message": message}  # Return dictionary with success=False
+
+#     students = Customer.objects.filter(student_class=student_class)
+
+#     for student in students:
+#         discount_applied = student.discount_applicable
+#         product_counter = defaultdict(int)
+
+#         # Prepare product references
+#         veg_product = Product.objects.filter(is_canteen_item=True, lunch_type="veg", 
+#                                            min_class__lte=student.student_class, 
+#                                            max_class__gte=student.student_class).first()
+#         egg_product = Product.objects.filter(is_canteen_item=True, lunch_type="egg",
+#                                            min_class__lte=student.student_class, 
+#                                            max_class__gte=student.student_class).first()
+#         nonveg_product = Product.objects.filter(is_canteen_item=True, lunch_type="nonveg",
+#                                               min_class__lte=student.student_class, 
+#                                               max_class__gte=student.student_class).first()
+#         if not veg_product:
+#             print("Veg product missing. Cannot proceed.")
+#             message = "Veg product missing. Cannot proceed."
+#             return {"success": False, "message": message}  # Return dictionary with success=False
+#         if not egg_product:
+#             print("Egg product missing. Cannot proceed.")
+#             message = "Egg product missing. Cannot proceed."
+#             return {"success": False, "message": message}  # Return dictionary with success=False
+#         if not nonveg_product:
+#             print("Non Veg product missing. Cannot proceed.")
+#             message = "Non Veg product missing. Cannot proceed."
+#             return {"success": False, "message": message}  # Return dictionary with success=False   
+#         # if not all([veg_product, egg_product, nonveg_product]):
+#         #     print("Required products missing. Cannot proceed.")
+#         #     message = "Non Veg product missing. Cannot proceed."
+#         #     return {"success": False, "message": message}  # Return dictionary with success=False   
+        
+#         # Count all working days in the selected month
+#         for day in working_days:
+#             day_name = day.strftime("%A")
+#             preference = student.meal_preference
+
+#             if day_name == "Wednesday":
+#                 if preference == "nonveg" and nonveg_product:
+#                     product_counter[nonveg_product.id] += 1
+#                 else:
+#                     product_counter[veg_product.id] += 1
+#             elif day_name == "Friday":
+#                 if preference in ["egg", "nonveg"] and egg_product:
+#                     product_counter[egg_product.id] += 1
+#                 else:
+#                     product_counter[veg_product.id] += 1
+#             else:
+#                 product_counter[veg_product.id] += 1
+        
+#         # Remove products with zero quantity
+#         product_counter = {k: v for k, v in product_counter.items() if v > 0}
+
+#         bill_items = []
+#         sub_total = 0
+
+#         for product_id, quantity in product_counter.items():
+#             product = Product.objects.filter(id=product_id).first()
+#             if not product:
+#                 continue
+#             rate = float(product.price)
+#             amount = rate * quantity
+#             sub_total += amount
+
+#             bill_item = BillItem.objects.create(
+#                 product_quantity=quantity,
+#                 rate=rate,
+#                 product_title=product.title,
+#                 unit_title=product.unit,
+#                 amount=amount,
+#                 product=product
+#             )
+#             bill_items.append(bill_item)
+
+#         tax_amount = sub_total * 0.13
+
+#         if discount_applied is not None:
+#             if discount_applied.discount_type == "PCT":
+#                 discount_amount = (discount_applied.discount_amount/100) * sub_total
+#             if discount_applied.discount_type == "FLAT":
+#                 discount_amount = discount_applied.discount_amount
+#         else:
+#             discount_amount = 0.0                     
+
+#         grand_total = sub_total + tax_amount - discount_amount
+#         amount_in_words = convert_amount_to_words(grand_total)
+        
+#         bill = Bill.objects.create(
+#             branch=branch,
+#             transaction_miti=transaction_miti,
+#             agent=None,
+#             agent_name='',
+#             terminal=1,
+#             customer_name=student.name,
+#             customer_address=student.address,
+#             customer_tax_number='',
+#             customer=student,
+#             transaction_date_time=transaction_date_time,
+#             transaction_date=transaction_date,
+#             sub_total=sub_total,
+#             discount_amount=discount_amount,
+#             taxable_amount=sub_total,
+#             tax_amount=tax_amount,
+#             grand_total=grand_total,
+#             service_charge=0.0,
+#             amount_in_words=amount_in_words,
+#             organization=Organization.objects.last(),
+#             print_count=1,
+#             payment_mode='Credit'
+#         )
+
+#         bill.bill_items.add(*bill_items)
+#         print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {month_start.strftime('%B %Y')})")
+#     return {"success": True, "message": f"Bills created for class {student_class} (Month: {month_start.strftime('%B %Y')})"}
+
+@transaction.atomic
+def create_advance_bills_for_class_by_month(student_class, month, year):
+    nepal_tz = pytz.timezone("Asia/Kathmandu")
+
+    # Calculate month start and end dates for target month
+    month_start = datetime(year, month, 1, tzinfo=nepal_tz)
+    if month == 12:
+        month_end = datetime(year+1, 1, 1, tzinfo=nepal_tz) - timedelta(days=1)
+    else:
+        month_end = datetime(year, month+1, 1, tzinfo=nepal_tz) - timedelta(days=1)
+
+    # Calculate previous month start and end dates
+    if month == 1:
+        prev_month_start = datetime(year-1, 12, 1, tzinfo=nepal_tz)
+        prev_month_end = month_start - timedelta(days=1)
+    else:
+        prev_month_start = datetime(year, month-1, 1, tzinfo=nepal_tz)
+        prev_month_end = month_start - timedelta(days=1)
+
+    transaction_date_time = datetime.now(nepal_tz).strftime("%Y-%m-%d %H:%M:%S")
+    transaction_date = datetime.now(nepal_tz).strftime("%Y-%m-%d")
+    transaction_miti = nepali_date.today()
+
+    # Get working days for the target month
+    working_days = WorkingDays.objects.filter(
+        working_date__gte=month_start.date(),
+        working_date__lte=month_end.date()
+    ).values_list('working_date', flat=True).order_by('working_date')
+
+    if not working_days.exists():
+        message = f"No working days found for {month_start.strftime('%B %Y')}"
+        print(message)
+        return {"success": False, "message": message}
+
+    branch = Branch.objects.active().filter(is_central_billing=True).last()
+    if not branch:
+        message = "No central billing branch found"
+        return {"success": False, "message": message}
+
+    students = Customer.objects.filter(student_class=student_class)
+
+    for student in students:
+        discount_applied = student.discount_applicable
+        product_counter = defaultdict(int)
+
+        # Prepare product references
+        veg_product = Product.objects.filter(
+            is_canteen_item=True, lunch_type="veg",
+            min_class__lte=student.student_class,
+            max_class__gte=student.student_class
+        ).first()
+        egg_product = Product.objects.filter(
+            is_canteen_item=True, lunch_type="egg",
+            min_class__lte=student.student_class,
+            max_class__gte=student.student_class
+        ).first()
+        nonveg_product = Product.objects.filter(
+            is_canteen_item=True, lunch_type="nonveg",
+            min_class__lte=student.student_class,
+            max_class__gte=student.student_class
+        ).first()
+
+        if not veg_product or not egg_product or not nonveg_product:
+            message = "Required products missing. Cannot proceed."
+            print(message)
+            return {"success": False, "message": message}
+
+        # Get missed meals from previous month that haven't been considered yet
+        missed_meals = tblmissedattendance.objects.filter(
+            student=student,
+            considered_next_month=False,
+            missed_date__gte=prev_month_start.date(),
+            missed_date__lte=prev_month_end.date()
+        )
+
+        # Count all working days in the target month
+        for day in working_days:
+            day_name = day.strftime("%A")
+            preference = student.meal_preference
+
+            if day_name == "Wednesday":
+                if preference == "nonveg" and nonveg_product:
+                    product_counter[nonveg_product.id] += 1
+                else:
+                    product_counter[veg_product.id] += 1
+            elif day_name == "Friday":
+                if preference in ["egg", "nonveg"] and egg_product:
+                    product_counter[egg_product.id] += 1
+                else:
+                    product_counter[veg_product.id] += 1
+            else:
+                product_counter[veg_product.id] += 1
+
+        # Subtract the missed meals from previous month
+        for missed_meal in missed_meals:
+            if missed_meal.product:
+                product_id = missed_meal.product.id
+                if product_id in product_counter:
+                    product_counter[product_id] -= 1
+                    if product_counter[product_id] < 0:
+                        product_counter[product_id] = 0
+                missed_meal.considered_next_month = True
+                missed_meal.save()
+
+        # Remove products with zero quantity
+        product_counter = {k: v for k, v in product_counter.items() if v > 0}
+
+        bill_items = []
+        sub_total = 0
+
+        for product_id, quantity in product_counter.items():
+            product = Product.objects.filter(id=product_id).first()
+            if not product:
+                continue
+            rate = float(product.price)
+            amount = rate * quantity
+            sub_total += amount
+
+            bill_item = BillItem.objects.create(
+                product_quantity=quantity,
+                rate=rate,
+                product_title=product.title,
+                unit_title=product.unit,
+                amount=amount,
+                product=product
+            )
+            bill_items.append(bill_item)
+
+
+
+        if discount_applied is not None:
+            if discount_applied.discount_type == "PCT":
+                discount_amount = (discount_applied.discount_amount/100) * sub_total
+            if discount_applied.discount_type == "FLAT":
+                discount_amount = discount_applied.discount_amount
+        else:
+            discount_amount = 0.0
+
+        taxable_amount = sub_total - discount_amount
+        tax_amount = taxable_amount * 0.13
+
+        grand_total = sub_total + tax_amount - discount_amount
+        amount_in_words = convert_amount_to_words(grand_total)
+
+        bill = Bill.objects.create(
+            branch=branch,
+            transaction_miti=transaction_miti,
+            agent=None,
+            agent_name='',
+            terminal=1,
+            customer_name=student.name,
+            customer_address=student.address,
+            customer_tax_number='',
+            customer=student,
+            transaction_date_time=transaction_date_time,
+            transaction_date=transaction_date,
+            sub_total=sub_total,
+            discount_amount=discount_amount,
+            taxable_amount=taxable_amount,
+            tax_amount=tax_amount,
+            grand_total=grand_total,
+            service_charge=0.0,
+            amount_in_words=amount_in_words,
+            organization=Organization.objects.last(),
+            print_count=1,
+            payment_mode='Credit'
+        )
+
+        bill.bill_items.add(*bill_items)
+        print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {month_start.strftime('%B %Y')})")
+
+    return {
+        "success": True,
+        "message": f"Bills created for class {student_class} (Month: {month_start.strftime('%B %Y')})"
+    }

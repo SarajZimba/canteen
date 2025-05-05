@@ -40,6 +40,9 @@ class Product(BaseModel):
     discount_exempt = models.BooleanField(default=False)
     ledger = models.ForeignKey('accounting.AccountLedger', null=True, blank=True, on_delete=models.SET_NULL)
     minimum_stock = models.PositiveIntegerField(default=0)
+    min_class = models.PositiveIntegerField(null=True, blank=True, help_text="Minimum class for this product")
+    max_class = models.PositiveIntegerField(null=True, blank=True, help_text="Maximum class for this product")
+
 
     LUNCH_TYPE_CHOICES = [
         ("veg", "Vegetarian"),

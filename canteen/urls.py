@@ -12,7 +12,7 @@ path('studentcanteenattendance/delete', StudentCanteenAttendanceDelete.as_view()
 
 from .views import bill_details_view, print_multiple_bills,single_bill_detail_view
 urlpatterns += [
-    path('multiple-bill', bill_details_view, name='multiple-bills'),
+    path('canteen-invoice', bill_details_view, name='canteen-invoice'),
     path('print-multiple-bill/<str:pk>', print_multiple_bills, name='print-multiple-bills'),
     path('single-bill-detail/<int:pk>', single_bill_detail_view, name='single-bill-detail'),
 ]
