@@ -9,6 +9,12 @@
             </h2>
             {{object.organization.company_address}} | Phone Number:  {{object.organization.company_contact_number}}<br>
             PAN: {{object.organization.tax_number}} 
+            |
+            Bank: {{object.organization.bank}} 
+            | 
+            Account No: {{object.organization.account_no}} 
+            | 
+            Contact No: {{object.organization.company_contact_number}} 
             <hr>
             <h5> 
                {% if not object.status %}

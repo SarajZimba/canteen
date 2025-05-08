@@ -57,6 +57,8 @@ class Organization(SingletonModel, BaseModel):
         choices=NEPALI_MONTH_CHOICES,
         default=NEPALI_MONTHS[0],  # Default to the first month (Baishakh)
     )
+    bank = models.CharField(max_length=255, null=True, blank=True)
+    account_no = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.org_name
