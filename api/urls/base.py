@@ -27,7 +27,8 @@ from .working_days import urlpatterns as working_days_urlpatterns
 from .holiday import urlpatterns as holiday_urlpatterns
 from .student_attendancecanteen import urlpatterns as student_canteenattendance_urlpatterns
 from .section import urlpatterns as section_urlpatterns
+from .monthlyadjustments import urlpatterns as monthlyadjustment_urlpatterns
 
 urlpatterns = (
-    [] + user_urlpatterns + product_urlpatterns + bill_urlpatterns + org_urlpatterns+discount_urlspatterns+purchaserequisition_urlpattern+accounting_urlpatterns+mobile_urlpatterns+enddayreport_urlpatterns+todayreport_urlpatterns+category_wise_sale_urlpatterns +report_urlpatterns+ master_urlpatterns+ bill_todayid_urlpatterns+ journal_entry_urls  + credit_journal_entry_urls + give_ledger_urls + vendor_urlpatterns + employee_urlpatterns + paid_leaves_urlpatterns + salary_sheet_urlptterns+ deduction_urlptterns+ commision_urlpatterns+ purchase_urlpatterns + canteen_urlpatterns + working_days_urlpatterns + holiday_urlpatterns + student_canteenattendance_urlpatterns + section_urlpatterns
+    [] + user_urlpatterns + product_urlpatterns + bill_urlpatterns + org_urlpatterns+discount_urlspatterns+purchaserequisition_urlpattern+accounting_urlpatterns+mobile_urlpatterns+enddayreport_urlpatterns+todayreport_urlpatterns+category_wise_sale_urlpatterns +report_urlpatterns+ master_urlpatterns+ bill_todayid_urlpatterns+ journal_entry_urls  + credit_journal_entry_urls + give_ledger_urls + vendor_urlpatterns + employee_urlpatterns + paid_leaves_urlpatterns + salary_sheet_urlptterns+ deduction_urlptterns+ commision_urlpatterns+ purchase_urlpatterns + canteen_urlpatterns + working_days_urlpatterns + holiday_urlpatterns + student_canteenattendance_urlpatterns + section_urlpatterns + monthlyadjustment_urlpatterns
 )

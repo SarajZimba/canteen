@@ -205,6 +205,8 @@ class Bill(BaseModel):
     # is_taxable = models.BooleanField(default=True)
     bill_count_number = models.PositiveIntegerField(blank=True, null=True, db_index=True)   
     is_end_day = models.BooleanField(default=False)
+    month = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-12
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = 'invoice_number', 'fiscal_year', 'branch'

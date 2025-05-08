@@ -33,12 +33,12 @@
         </form>
     </div>
 
-    <!-- Check if there are any students for the selected class -->
+    <!-- Check if there are any students for the selected class
     {% if request.GET.student_class %}
             <div class="mb-3">
                 <button id="createBillsBtn" class="btn btn-success">Create Bills for Class {{ request.GET.student_class }}</button>
             </div>
-    {% endif %}
+    {% endif %} -->
 
     {% if request.GET.student_class %}
     <div class="mb-3">
@@ -386,7 +386,7 @@
                                     text: data.data,
                                     confirmButtonText: 'OK'
                                 }).then(() => {
-                                    window.location.href = `/print-multiple-bill/${encodeURIComponent(selectedClass)}`;
+                                    window.location.href = `/print-multiple-bill/${encodeURIComponent(selectedClass)}?month=${month}&year=${year}`;
                                 });
                             } else if (data.error) {
                                         // Error case - no working days or other error

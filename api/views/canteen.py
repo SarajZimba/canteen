@@ -812,6 +812,11 @@ class CheckoutClassBillsByMonth(APIView):
         try:
             month = int(month)
             year = int(year)
+            # Optional: Add validation for month/year ranges
+            if month < 1 or month > 12:
+                return Response({"error": "Month must be between 1 and 12"}, status=400)
+            # if year < 2000 or year > 2100:  # Adjust as needed
+            #     return Response({"error": "Invalid year"}, status=400)
             result = create_advance_bills_for_class_by_month(student_class, month, year)
             if result['success']:
                 return Response({"data": result['message']}, status=200)

@@ -442,6 +442,34 @@ def create_advance_bills_for_class(student_class):
     transaction_date = now.strftime("%Y-%m-%d")
     transaction_miti = nepali_date.today()
 
+
+    month = now.month
+
+    year = now.year
+    # Validate month and year
+    try:
+        month = int(month)
+        year = int(year)
+        if month < 1 or month > 12:
+            return {"success": False, "message": "Month must be between 1 and 12"}
+        if year < 2000 or year > 2100:  # Adjust year range as needed
+            return {"success": False, "message": "Invalid year"}
+    except (ValueError, TypeError):
+        return {"success": False, "message": "Month and year must be valid numbers"}
+    
+    # Check if bills already exist for this class/month/year
+    existing_bills = Bill.objects.filter(
+        customer__student_class=student_class,
+        month=month,
+        year=year
+    ).exists()
+    
+    if existing_bills:
+        return {
+            "success": False,
+            "message": f"Bills for class {student_class} have already been created for {month}/{year}"
+        }
+
     # Get current month's first and last day dynamically
     current_month_start = now.replace(day=1)
     next_month = current_month_start.replace(month=current_month_start.month+1) if current_month_start.month < 12 else current_month_start.replace(year=current_month_start.year+1, month=1)
@@ -603,7 +631,9 @@ def create_advance_bills_for_class(student_class):
             amount_in_words=amount_in_words,
             organization=Organization.objects.last(),
             print_count=1,
-            payment_mode='Credit'
+            payment_mode='Credit',
+            month=month,  # Add month field
+            year=year     # Add year field
         )
 
         bill.bill_items.add(*bill_items)
@@ -755,8 +785,21 @@ def create_advance_bills_for_class(student_class):
 #         print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {month_start.strftime('%B %Y')})")
 #     return {"success": True, "message": f"Bills created for class {student_class} (Month: {month_start.strftime('%B %Y')})"}
 
+
+# from canteen.models import SchoolHolidayCredit
 @transaction.atomic
 def create_advance_bills_for_class_by_month(student_class, month, year):
+    existing_bills = Bill.objects.filter(
+        customer__student_class=student_class,
+        month=month,
+        year=year
+    ).exists()
+    
+    if existing_bills:
+        return {
+            "success": False,
+            "message": f"Bills for class {student_class} have already been created for {month}/{year}"
+        }
     nepal_tz = pytz.timezone("Asia/Kathmandu")
 
     # Calculate month start and end dates for target month
@@ -794,7 +837,7 @@ def create_advance_bills_for_class_by_month(student_class, month, year):
         message = "No central billing branch found"
         return {"success": False, "message": message}
 
-    students = Customer.objects.filter(student_class=student_class)
+    students = Customer.objects.filter(student_class=student_class, status=True, is_deleted=False)
 
     for student in students:
         discount_applied = student.discount_applicable
@@ -859,6 +902,40 @@ def create_advance_bills_for_class_by_month(student_class, month, year):
                 missed_meal.considered_next_month = True
                 missed_meal.save()
 
+        # # Subtract holiday meals not yet considered
+        # unprocessed_holidays = SchoolHolidayCredit.objects.filter(
+        #     considered_next_month=False,
+        #     holiday_date__lte=month_end.date()  # Include previous and current holidays
+        # )
+
+        # for holiday in unprocessed_holidays:
+        #     holiday_date = holiday.holiday_date
+        #     day_name = holiday_date.strftime("%A")
+        #     preference = student.meal_preference
+
+        #     product_to_subtract = None
+
+        #     if day_name == "Wednesday":
+        #         if preference == "nonveg" and nonveg_product:
+        #             product_to_subtract = nonveg_product
+        #         else:
+        #             product_to_subtract = veg_product
+        #     elif day_name == "Friday":
+        #         if preference in ["egg", "nonveg"] and egg_product:
+        #             product_to_subtract = egg_product
+        #         else:
+        #             product_to_subtract = veg_product
+        #     else:
+        #         product_to_subtract = veg_product
+
+        #     if product_to_subtract and product_to_subtract.id in product_counter:
+        #         product_counter[product_to_subtract.id] -= 1
+        #         if product_counter[product_to_subtract.id] < 0:
+        #             product_counter[product_to_subtract.id] = 0
+        #     holiday.update()
+            # # Mark holidays as considered
+            # unprocessed_holidays.update(considered_next_month=True)
+
         # Remove products with zero quantity
         product_counter = {k: v for k, v in product_counter.items() if v > 0}
 
@@ -920,13 +997,15 @@ def create_advance_bills_for_class_by_month(student_class, month, year):
             amount_in_words=amount_in_words,
             organization=Organization.objects.last(),
             print_count=1,
-            payment_mode='Credit'
+            payment_mode='Credit',
+            month=month,
+            year=year,
         )
 
         bill.bill_items.add(*bill_items)
-        print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {month_start.strftime('%B %Y')})")
+        print(f"Advance bill created for {student.name}: {len(bill_items)} items (Month: {month_start.strftime('%B %Y')}/{year})")
 
     return {
         "success": True,
-        "message": f"Bills created for class {student_class} (Month: {month_start.strftime('%B %Y')})"
+        "message": f"Bills created for class {student_class} (Month: {month_start.strftime('%B %Y')}/{year})"
     }

@@ -278,14 +278,18 @@ class StudentCanteenAttendanceList(StudentCanteenAttendanceMixin, ListView):
         # Fetch the meal entries
         meal_eatens_by_students = list(self.get_queryset())
 
-        distinct_classes = Customer.objects.filter(status=True, is_deleted=False) \
-            .values('student_class') \
-            .distinct()
-        # Convert the queryset into the desired format (key-value pair)
-        distinct_classes = [{'student__student_class': item['student_class']} for item in distinct_classes]
+        distinct_classes = Customer.objects.filter(
+            status=True,
+            is_deleted=False,
+            student_class__isnull=False
+        ).order_by('student_class') \
+        .values('student_class') \
+        .distinct()
 
-        # Remove duplicates by using a set for uniqueness
-        distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]
+        distinct_classes = sorted(
+            [{'student__student_class': item['student_class']} for item in distinct_classes],
+            key=lambda x: int(x['student__student_class'])
+        )
         context['distinct_classes'] = distinct_classes
         context['meal_eatens_by_students'] = meal_eatens_by_students
         return context
@@ -312,24 +316,62 @@ from bill.models import Bill
 
 from urllib.parse import unquote
 
+from django.utils import timezone
+from urllib.parse import unquote, parse_qs
+from django.http import QueryDict
+
 def print_multiple_bills(request, pk):
     # Decode the URL-encoded class name
     student_class = unquote(pk)
     
+    # Get month and year from query parameters
+    month = request.GET.get('month')  # None is default
+    year = request.GET.get('year')    # None is default
+    
+    # If month/year not provided, use current month/year
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+    
     # Query bills for this class
     bills = Bill.objects.filter(customer__student_class=student_class)
-
-    # Now calculate total_quantity and total_amount per bill
+    
+    # Apply month/year filters if provided, otherwise use current month/year
+    if month and year:
+        bills = bills.filter(month=month, year=year)
+    else:
+        bills = bills.filter(month=current_month, year=current_year)
+    
+    # Calculate totals
     for bill in bills:
-        total_quantity = sum(item.product_quantity for item in bill.bill_items.all())
-        total_amount = sum(item.amount for item in bill.bill_items.all())
-        bill.total_quantity = total_quantity
-        bill.total_amount = total_amount
+        bill.total_quantity = sum(item.product_quantity for item in bill.bill_items.all())
+        bill.total_amount = sum(item.amount for item in bill.bill_items.all())
     
     return render(request, 'bill/studentbilldetail.html', {
         'bills': bills,
-        'class_name': student_class  # Pass decoded name to template
+        'class_name': student_class,
+        'selected_month': month or current_month,  # Show selected or current
+        'selected_year': year or current_year      # Show selected or current
     })
+
+# def print_multiple_bills(request, pk):
+#     # Decode the URL-encoded class name
+#     student_class = unquote(pk)
+    
+#     # Query bills for this class
+#     bills = Bill.objects.filter(customer__student_class=student_class)
+
+#     # Now calculate total_quantity and total_amount per bill
+#     for bill in bills:
+#         total_quantity = sum(item.product_quantity for item in bill.bill_items.all())
+#         total_amount = sum(item.amount for item in bill.bill_items.all())
+#         bill.total_quantity = total_quantity
+#         bill.total_amount = total_amount
+    
+#     return render(request, 'bill/studentbilldetail.html', {
+#         'bills': bills,
+#         'class_name': student_class  # Pass decoded name to template
+#     })
 
 # from user.models import Customer
 # def bill_details_view(request):
@@ -471,22 +513,140 @@ from django.db.models import Count, Q
 from user.models import Customer
 from django.http import JsonResponse
 
+# def bill_details_view(request):
+#     # Get filter parameters
+#     student_class = request.GET.get('student_class')
+#     student_section = request.GET.get('student_section')
+#     student_name = request.GET.get('student_name')
+    
+#     # Get distinct classes for dropdown (always needed)
+#     distinct_classes = Customer.objects.filter(
+#         status=True, 
+#         is_deleted=False, 
+#         student_class__isnull=False
+#     ).values('student_class').distinct()
+    
+#     # Convert to desired format
+#     distinct_classes = [{'student_class': item['student_class']} for item in distinct_classes]
+#     distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]
+    
+#     # Initialize bills as empty queryset
+#     bills = Bill.objects.none()
+    
+#     # Build filter conditions
+#     filters = Q()
+    
+#     if student_class:
+#         filters &= Q(customer__student_class=student_class)
+#     if student_section:
+#         filters &= Q(customer__section=student_section)
+#     if student_name:
+#         filters &= Q(customer__name__icontains=student_name)
+    
+#     # Only query bills if at least one filter is provided
+#     if student_class or student_section or student_name:
+#         bills = Bill.objects.filter(filters)
+        
+#         # Calculate totals
+#         for bill in bills:
+#             bill.total_quantity = sum(item.product_quantity for item in bill.bill_items.all())
+#             bill.total_amount = sum(item.amount for item in bill.bill_items.all())
+    
+#     # Get sections for the selected class (if any)
+#     sections_for_class = []
+#     if student_class:
+#         sections_for_class = Customer.objects.filter(
+#             student_class=student_class,
+#             section__isnull=False
+#         ).exclude(section__exact='').values_list('section', flat=True).distinct()
+    
+#     # For AJAX requests (section dropdown)
+#     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#         return JsonResponse({
+#             'sections': list(sections_for_class),
+#             'current_section': request.GET.get('student_section', '')
+#         })
+    
+#     return render(request, 'bill/studentbilldetail.html', {
+#         'bills': bills,
+#         'distinct_classes': distinct_classes,
+#         'sections_for_class': sections_for_class
+#     })
+
+
+from django.db.models import Q
+import datetime
+from django.utils import timezone
+
 def bill_details_view(request):
     # Get filter parameters
     student_class = request.GET.get('student_class')
     student_section = request.GET.get('student_section')
     student_name = request.GET.get('student_name')
+    month_filter = request.GET.get('month')
+    year_filter = request.GET.get('year')
     
-    # Get distinct classes for dropdown (always needed)
+    now = datetime.now()
+    current_month = now.month
+    current_year = now.year
+    
+    
+    # Prepare month choices (1-12 with names)
+    months = [
+        (1, 'January'), (2, 'February'), (3, 'March'), (4, 'April'),
+        (5, 'May'), (6, 'June'), (7, 'July'), (8, 'August'),
+        (9, 'September'), (10, 'October'), (11, 'November'), (12, 'December')
+    ]
+    
+    # Prepare year choices (current year and some past/future years)
+    years = range(current_year - 2, current_year + 3)
+    
+    # # Get distinct classes for dropdown (always needed)
+    # distinct_classes = Customer.objects.filter(
+    #     status=True, 
+    #     is_deleted=False, 
+    #     student_class__isnull=False
+    # ).values('student_class').distinct()
+    
+    # # Convert to desired format
+    # distinct_classes = [{'student_class': item['student_class']} for item in distinct_classes]
+    # distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]
+
+    # # Get distinct classes for dropdown in ascending order
+    # distinct_classes = Customer.objects.filter(
+    #     status=True, 
+    #     is_deleted=False, 
+    #     student_class__isnull=False
+    # ).order_by('student_class') .values('student_class').distinct()
+    
+    # # Convert to desired format and sort numerically if possible
+    # distinct_classes = [{'student_class': item['student_class']} for item in distinct_classes]
+    
+    # try:
+    #     # Try numeric sorting first
+    #     distinct_classes.sort(key=lambda x: int(x['student_class']))
+    # except (ValueError, TypeError):
+    #     # Fallback to alphabetical sorting if not numeric
+    #     distinct_classes.sort(key=lambda x: x['student_class'])
+    
+    # # Remove duplicates (though distinct() should already handle this)
+    # distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]
+
     distinct_classes = Customer.objects.filter(
         status=True, 
         is_deleted=False, 
         student_class__isnull=False
     ).values('student_class').distinct()
-    
-    # Convert to desired format
+
+    # Convert to list and remove duplicates
     distinct_classes = [{'student_class': item['student_class']} for item in distinct_classes]
     distinct_classes = [dict(t) for t in {tuple(d.items()) for d in distinct_classes}]
+
+    # Sort numerically if possible
+    try:
+        distinct_classes.sort(key=lambda x: int(x['student_class']))
+    except (ValueError, TypeError):
+        distinct_classes.sort(key=lambda x: x['student_class'])
     
     # Initialize bills as empty queryset
     bills = Bill.objects.none()
@@ -496,14 +656,21 @@ def bill_details_view(request):
     
     if student_class:
         filters &= Q(customer__student_class=student_class)
-    if student_section:
+    if student_section is not None and student_section != '':
         filters &= Q(customer__section=student_section)
     if student_name:
         filters &= Q(customer__name__icontains=student_name)
     
+    # Date filtering
+    date_filters = Q()
+    if year_filter:
+        date_filters &= Q(year=year_filter)
+    if month_filter:
+        date_filters &= Q(month=month_filter)
+    
     # Only query bills if at least one filter is provided
-    if student_class or student_section or student_name:
-        bills = Bill.objects.filter(filters)
+    if student_class or student_section or student_name or month_filter or year_filter:
+        bills = Bill.objects.filter(filters & date_filters)
         
         # Calculate totals
         for bill in bills:
@@ -528,7 +695,11 @@ def bill_details_view(request):
     return render(request, 'bill/studentbilldetail.html', {
         'bills': bills,
         'distinct_classes': distinct_classes,
-        'sections_for_class': sections_for_class
+        'sections_for_class': sections_for_class,
+        'months': months,
+        'years': years,
+        'current_month': current_month,
+        'current_year': current_year,
     })
 
 

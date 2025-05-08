@@ -54,6 +54,34 @@
                 {% endif %}
             </select>
         </div>
+
+        <div>
+            <label for="month" class="form-label">Select Month</label>
+            <select name="month" id="monthFilter" class="form-control">
+                <option value="">All Months</option>
+                {% for month_num, month_name in months %}
+                    <option value="{{ month_num }}" 
+                            {% if request.GET.month == month_num|stringformat:"s" %}selected
+                            {% elif not request.GET.month and month_num == current_month %}selected{% endif %}>
+                        {{ month_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+       
+        <div>
+            <label for="year" class="form-label">Select Year</label>
+            <select name="year" id="yearFilter" class="form-control">
+                <option value="">All Years</option>
+                {% for year in years %}
+                    <option value="{{ year }}" 
+                            {% if request.GET.year == year|stringformat:"s" %}selected
+                            {% elif not request.GET.year and year == current_year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
         
         <div class="d-flex">
             <button type="submit" class="btn btn-primary me-2">Filter Bills</button>
@@ -146,13 +174,24 @@
     }
 
     // Function to reset all filters
+    // function resetFilters() {
+    //     document.getElementById('studentName').value = '';
+    //     document.getElementById('studentClass').value = '';
+    //     document.getElementById('studentSection').innerHTML = '<option value="">Select a Section</option>';
+    //     document.getElementById('studentSection').disabled = true;
+    //     window.location.href = window.location.pathname; // Reload without query params
+    // }
+
+
     function resetFilters() {
         document.getElementById('studentName').value = '';
         document.getElementById('studentClass').value = '';
         document.getElementById('studentSection').innerHTML = '<option value="">Select a Section</option>';
         document.getElementById('studentSection').disabled = true;
+        document.getElementById('monthFilter').value = '';
+        document.getElementById('yearFilter').value = '';
         window.location.href = window.location.pathname; // Reload without query params
-    }
+}
 
     // Function to print all bills
     function printAllBills() {

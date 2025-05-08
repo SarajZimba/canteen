@@ -88,6 +88,9 @@ class DeleteCustomerAPI(APIView):
         customer_bills = Bill.objects.filter(customer = customer_obj).exists()
 
         if customer_bills:
+            customer_obj.status=False
+            customer_obj.is_deleted  =True
+            customer_obj.save()
             return Response({"message":"This customer already has bills on his name . We cannot delete it but can be changed to inactive", "flag":False}, 200)
         
         if not customer_bills:
@@ -122,7 +125,7 @@ class StatusToggleStudent(APIView):
         if student_id is None:
             student = Customer.objects.get(id=int(student_id))
             student.status = False
-            student.is_deleted = False
+            student.is_deleted = True
             student.save()
             return Response(f"Student has been deleted successfully", 200)            
 

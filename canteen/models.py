@@ -44,3 +44,10 @@ class tblmissedattendance_butcharged(BaseModel):
     rate =  models.DecimalField(max_digits=10, decimal_places=2, default=0)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     missed_date = models.DateField(null=True, blank=True)
+
+class MonthlyAdjustments(BaseModel):
+    holiday_date = models.DateField(null=True, blank=True)
+    considered_next_month = models.BooleanField(default=False)
+    month = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-12
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
+
