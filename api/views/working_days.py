@@ -87,26 +87,84 @@ class WorkingDaysAPI(APIView):
 
 from datetime import datetime
 
+# class HolidayAPI(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def post(self, request, *args, **kwargs):
+#         data = request.data  # Expecting a list of date strings
+#         failed_dates = []
+
+#         for datum in data:
+#             try:
+#                 # Validate date format (optional but good practice)
+#                 date_obj = datetime.strptime(datum, "%Y-%m-%d").date()
+#                 working_day = WorkingDays.objects.filter(working_date=date_obj)
+#                 if working_day.exists():
+#                     working_day.delete()
+#             except ValueError:
+#                 failed_dates.append(datum)
+
+#         if failed_dates:
+#             return Response({"error": f"Invalid date format for: {failed_dates}"}, status=400)
+
+#         return Response({"message": "Holidays have been added"}, status=200)
+
+
+from datetime import datetime
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+from bill.models import Bill  # adjust import to your project’s layout
+
 class HolidayAPI(APIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
-        data = request.data  # Expecting a list of date strings
+        raw_dates = request.data  # expecting something like ["2025-05-08", "2025-05-09", ...]
+        date_objs = []
         failed_dates = []
 
-        for datum in data:
+        # 1) parse & validate all dates
+        for date_str in raw_dates:
             try:
-                # Validate date format (optional but good practice)
-                date_obj = datetime.strptime(datum, "%Y-%m-%d").date()
-                working_day = WorkingDays.objects.filter(working_date=date_obj)
-                if working_day.exists():
-                    working_day.delete()
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                date_objs.append(date_obj)
             except ValueError:
-                failed_dates.append(datum)
+                failed_dates.append(date_str)
 
         if failed_dates:
-            return Response({"error": f"Invalid date format for: {failed_dates}"}, status=400)
+            return Response(
+                {"error": f"Invalid date format for: {failed_dates}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        return Response({"message": "Holidays have been added"}, status=200)
+        if not date_objs:
+            return Response(
+                {"error": "No valid dates provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2) extract month & year from the first date
+        first = date_objs[0]
+        month, year = first.month, first.year
+
+        # 3) check for existing Bill for that month/year
+        if Bill.objects.filter(month=month, year=year).exists():
+            return Response(
+                {"error": f"A bill already exists for {year}-{month:02d}."},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        # 4) delete any WorkingDays entries for each holiday date
+        for date_obj in date_objs:
+            WorkingDays.objects.filter(working_date=date_obj).delete()
+
+        # 5) return success
+        return Response(
+            {"message": f"Holidays for {year}-{month:02d} have been applied."},
+            status=status.HTTP_200_OK
+        )
 
 
 

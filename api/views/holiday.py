@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import date, timedelta
 import calendar
-from canteen.models import WorkingDays
+from canteen.models import WorkingDays, MonthlyAdjustments
 
 class HolidayDatesView(APIView):
     def get(self, request):
@@ -30,9 +30,28 @@ class HolidayDatesView(APIView):
         # Dates that are NOT in working_dates => Holidays
         holiday_dates = sorted(all_dates - working_dates)
 
+        # Get MonthlyAdjustments holidays for the month
+        monthly_adjustments = MonthlyAdjustments.objects.filter(
+            year=year,
+            month=month
+        ).values('holiday_date', 'considered_next_month')
+
+        # Serialize adjustments
+        # adjustments_data = [
+        #     {
+        #         adj['holiday_date'].isoformat(),
+        #     }
+        #     for adj in monthly_adjustments
+        # ]
+        adjustments_data = []
+
+        for adj in monthly_adjustments:
+            # adj['holiday_date'].isoformat() for adj in holiday_dates
+            adjustments_data.append(adj["holiday_date"])
         return Response({
             'holidays': [d.isoformat() for d in holiday_dates],
-            'working_days' : [d.isoformat() for d in working_dates]
+            'working_days' : [d.isoformat() for d in working_dates],
+            'monthly_adjustments': adjustments_data
         })
     def put(self, request):
         

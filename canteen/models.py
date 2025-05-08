@@ -50,4 +50,5 @@ class MonthlyAdjustments(BaseModel):
     considered_next_month = models.BooleanField(default=False)
     month = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-12
     year = models.PositiveSmallIntegerField(null=True, blank=True)
-
+    valid_for_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    valid_for_year = models.PositiveSmallIntegerField(null=True, blank=True)  # NEW FIELD
