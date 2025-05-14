@@ -5,19 +5,9 @@
 {% endblock title %}
 
 {% block content %}
-<style>
-    @media print {
-        @page {
-            size: A5 portrait;
-            scale: 0.6;
-            margin: 5 mm;
-            border: 1px solid red;
-        }
-    }
-</style>
 
 <!-- Filter Form -->
-<div class="mb-3">
+<div class="filter-section">
     <form method="get" action="">
         <!-- Student Name Search -->
         <div class="mb-3">
@@ -55,7 +45,7 @@
             </select>
         </div>
 
-        <div>
+        <div class="mb-3">
             <label for="month" class="form-label">Select Month</label>
             <select name="month" id="monthFilter" class="form-control">
                 <option value="">All Months</option>
@@ -69,7 +59,7 @@
             </select>
         </div>
        
-        <div>
+        <div class="mb-3">
             <label for="year" class="form-label">Select Year</label>
             <select name="year" id="yearFilter" class="form-control">
                 <option value="">All Years</option>
@@ -123,7 +113,7 @@
     </div>
     <!-- End Actions -->
 </div>
-<!-- End Footer %} -->
+<!-- End Footer -->
 
 <script>
     // Function to load sections for a class
@@ -145,7 +135,6 @@
                     
                     sectionSelect.innerHTML = '<option value="">Select a Section</option>';
                     
-                    // Process sections from the API response
                     data.forEach(section => {
                         const option = document.createElement('option');
                         option.value = section.section;
@@ -168,20 +157,9 @@
         }
     }
 
-    // Function to fetch sections (wrapper for loadSections)
     function fetchSections(studentClass) {
         loadSections(studentClass);
     }
-
-    // Function to reset all filters
-    // function resetFilters() {
-    //     document.getElementById('studentName').value = '';
-    //     document.getElementById('studentClass').value = '';
-    //     document.getElementById('studentSection').innerHTML = '<option value="">Select a Section</option>';
-    //     document.getElementById('studentSection').disabled = true;
-    //     window.location.href = window.location.pathname; // Reload without query params
-    // }
-
 
     function resetFilters() {
         document.getElementById('studentName').value = '';
@@ -190,31 +168,33 @@
         document.getElementById('studentSection').disabled = true;
         document.getElementById('monthFilter').value = '';
         document.getElementById('yearFilter').value = '';
-        window.location.href = window.location.pathname; // Reload without query params
-}
+        window.location.href = window.location.pathname;
+    }
 
-    // Function to print all bills
     function printAllBills() {
         var billsContainer = document.getElementById('bills-container');
         if (billsContainer) {
             var printContents = billsContainer.innerHTML;
-            if (printContents) {
-                var originalContents = document.body.innerHTML;
-                document.body.innerHTML = printContents;
-                window.print();
-                document.body.innerHTML = originalContents;
-            }
+            var originalContents = document.body.innerHTML;
+            
+            // Create a print-specific document
+            var printWindow = window.open('', '', 'width=300,height=600');
+
+            printWindow.document.write(printContents);
+            
+            setTimeout(function() {
+                printWindow.print();
+                printWindow.close();
+            }, 200);
         }
     }
 
-    // Load sections on page load if a class is selected
     document.addEventListener('DOMContentLoaded', function() {
         const selectedClass = document.getElementById('studentClass').value;
         if (selectedClass) {
             loadSections(selectedClass);
         }
         
-        // Initialize any other needed functionality
         {% if messages %}
             {% for message in messages %}
                 Swal.fire({

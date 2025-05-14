@@ -213,6 +213,12 @@ class Bill(BaseModel):
 
     def __str__(self):
         return f"{self.customer_name}-{self.transaction_date}- {self.grand_total}"
+    
+    def get_month_name(self):
+        import calendar
+        if self.month:
+            return calendar.month_name[self.month]
+        return ""
 
 @receiver(post_save, sender=Bill)
 def create_invoice_number(sender, instance, created, **kwargs):
